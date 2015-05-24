@@ -17,6 +17,11 @@ namespace
 {
 	inline int pop(VMContext *c)
 	{
+		if (sp(c) < 0)
+		{
+			std::cout << "Stack underflow! Aborting.." << std::endl;
+			quick_exit(EXIT_FAILURE);
+		}
 		return c->stack[--sp(c)];
 	}
 
@@ -156,6 +161,12 @@ void vm_eval(VMContext *ctx, InstructionSet instr)
 		print_registers(ctx);
 		print_stack(ctx);
 		break;
+	case PRNT: {
+		int reg = consume_word(ctx);
+		int val = regv(ctx, reg);
+		printf("%d", val);
+		break;
+	}
 	default:
 		break;
 	}

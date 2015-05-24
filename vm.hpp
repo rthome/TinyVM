@@ -1,18 +1,28 @@
 #pragma once
 
-enum InstructionSet
+#include <cstdint>
+
+typedef int64_t vmword;
+
+enum Opcode
 {
 	// Legend:
 	//   a,b,c - literal value
 	//   r,s,t - register index
+	//   x,y,z - memory address
 
 	NOP,  // NOP        Do nothing (still increment ic)
     PUSH, // PUSH a     Push a onto the stack
 	PSHR, // PSHR r     Push content of r onto the stack
-    POP,  // POP r      Pop the top of the stack into r
+    POP,  // POP r      Pop the top of the stack into a register
+	POPM, // POPM x     Pop the top of the stack into memory
     ADD,  // ADD r s t  Add contents of s and t and put the result into r
+	INC,  // INC r      Increment contents of r
+	DEC,  // DEC r      Decrement contents of r
     SET,  // SET r a    Set r to a
 	MOV,  // MOV r s    Copy value of s into r
+	MOVM, // MOVM r x   Copy from register to memory (r to x)
+	MOVR, // MOVR x r   Copy from memory to register (x to r)
     HALT, // HALT       Stop execution
 	DBG,  // DBG        Print state information
 	PRNT, // PRNT r     Print content of r, formatted as a number      
@@ -35,21 +45,20 @@ enum Registers
 
 	IP, // Instruction pointer
 	SP, // Stack pointer
+	SBP, // Stack base pointer
 
 	REGISTER_COUNT,
 };
 
 struct VMContext
 {
-	static const size_t MAX_PROGRAM_SIZE = 256;
-	static const size_t MAX_STACK_SIZE = 128;
+	static const size_t MEMORY_SIZE = 4096;
 
 	bool running = true;
-	unsigned long long ic = 0; // instruction count
+	size_t ic = 0; // Instruction counter
 
-	int program[MAX_PROGRAM_SIZE]; // Program memory
-	int stack[MAX_STACK_SIZE]; // Stack
-	int registers[REGISTER_COUNT]; // Register file
+	vmword registers[REGISTER_COUNT];
+	vmword memory[MEMORY_SIZE];
 };
 
 // Create a new VM context
@@ -61,12 +70,15 @@ void vm_reset_context(VMContext *ctx);
 // Destroy a context
 void vm_destroy_context(VMContext *ctx);
 
-// Load a program into the given context
+// Set the instruction pointer to value
+void vm_set_program_base(VMContext *ctx, vmword value);
+
+// Load a program into the given context at ip
 // n = number of bytes to load
-void vm_load_program(VMContext *ctx, const int *progbuf, size_t n);
+void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n);
 
 // Fetch the next instruction
-int vm_fetch(VMContext *ctx);
+vmword vm_fetch(VMContext *ctx);
 
 // Evaluate an instruction given a VM context
-void vm_eval(VMContext *ctx, InstructionSet instr);
+void vm_eval(VMContext *ctx, Opcode instr);

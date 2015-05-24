@@ -9,45 +9,50 @@
 // PRIVATE HELPER FUNCTIONS
 // // //
 
-#define sp(ctx) (ctx->registers[SP])
-#define ip(ctx) (ctx->registers[IP])
-#define regv(ctx, r) (ctx->registers[(r)])
+#define sp(ctx) ((ctx)->registers[SP])
+#define sbp(ctx) ((ctx)->registers[SBP])
+#define ip(ctx) ((ctx)->registers[IP])
+
+#define regv(ctx, r) ((ctx)->registers[(r)])
+#define stack(ctx) ((ctx)->memory + sbp(ctx)) // base address of the stack for the given context
+#define stackv(ctx, addr) *(stack(ctx) - (addr)) // contents of address on stack
+#define stackp(ctx) stackv(ctx, sp(ctx)) // contents of address pointed to by stack pointer
 
 namespace
 {
-	inline int pop(VMContext *c)
+	inline void crashvm(const char *msg)
+	{
+		std::cout << msg << std::endl;
+		quick_exit(EXIT_FAILURE);
+	}
+
+	inline vmword pop(VMContext *c)
 	{
 		if (sp(c) < 0)
-		{
-			std::cout << "Stack underflow! Aborting.." << std::endl;
-			quick_exit(EXIT_FAILURE);
-		}
-		return c->stack[--sp(c)];
+			crashvm("Stack underflow! Aborting..");
+
+		vmword val = stackp(c); // get top of stack
+		sp(c)--; // decrement stack pointer
+		return val;
 	}
 
-	inline void push(VMContext *c, int val)
+	inline void push(VMContext *c, vmword val)
 	{
-		if (sp(c) > 0 && sp(c) >= VMContext::MAX_STACK_SIZE)
-		{
-			std::cout << "Stack overflow! Aborting.." << std::endl;
-			quick_exit(EXIT_FAILURE);
-		}
-		c->stack[++sp(c)] = val;
-	}
-
-	inline int consume_word(VMContext *c)
-	{
-		return c->program[ip(c)++];
+		if (sp(c) > 0 && sp(c) > sbp(c))
+			crashvm("Stack overflow! Aborting..");
+		
+		sp(c)++; // increment stack pointer
+		stackp(c) = val; // set value
 	}
 
 	void print_stack(const VMContext *c)
 	{
 		std::cout << "Stack dump @ ic " << c->ic;
-		for (size_t i = 0; i < VMContext::MAX_STACK_SIZE; i++)
+		for (size_t i = sbp(c); i >= 0; i--)
 		{
-			if (i % 10 == 0)
-				printf("\n  %03d: ", i);
-			printf("%010d ", c->stack[i]);
+			if (i % 5 == 0)
+				printf("\n  %04d: ", sbp(c) - i);
+			printf("%020d ", stackv(c, i));
 		}
 		printf("\n");
 	}
@@ -67,6 +72,7 @@ namespace
 		std::cout << "  R9 = " << regv(c, R9) << std::endl;
 		std::cout << "  IP = " << regv(c, IP) << std::endl;
 		std::cout << "  SP = " << regv(c, SP) << std::endl;
+		std::cout << "  SBP = " << regv(c, SBP) << std::endl;
 	}
 }
 
@@ -83,10 +89,11 @@ VMContext *vm_create_context()
 
 void vm_reset_context(VMContext *ctx)
 {
-	memset(ctx->program, 0, sizeof(ctx->program));
-	memset(ctx->stack, 0, sizeof(ctx->stack));
+	memset(ctx->memory, 0, sizeof(ctx->memory));
 	memset(ctx->registers, 0, sizeof(ctx->registers));
 	sp(ctx) = -1;
+	sbp(ctx) = 127;
+
 	ctx->running = true;
 }
 
@@ -95,60 +102,89 @@ void vm_destroy_context(VMContext *ctx)
 	delete ctx;
 }
 
-void vm_load_program(VMContext *ctx, const int *progbuf, size_t n)
+void vm_set_program_base(VMContext *ctx, vmword value)
 {
-	if (n > VMContext::MAX_PROGRAM_SIZE)
-		quick_exit(EXIT_FAILURE);
-	memcpy(ctx->program, progbuf, n);
+	ip(ctx) = value;
 }
 
-int vm_fetch(VMContext *ctx)
+void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n)
 {
-	if (ip(ctx) >= VMContext::MAX_PROGRAM_SIZE)
-	{
-		std::cout << "IP overflow! Aborting.." << std::endl;
-		quick_exit(EXIT_FAILURE);
-	}
-	return ctx->program[ip(ctx)];
+	memcpy(ctx->memory + ip(ctx), progbuf, n);
 }
 
-void vm_eval(VMContext *ctx, InstructionSet instr)
+vmword vm_fetch(VMContext *ctx)
+{
+	if (ip(ctx) >= VMContext::MEMORY_SIZE)
+		crashvm("IP overflowing memory! Aborting..");
+
+	return ctx->memory[ip(ctx)++];
+}
+
+void vm_eval(VMContext *ctx, Opcode instr)
 {
 	switch (instr)
 	{
 	case PUSH: {
-		push(ctx, consume_word(ctx));
+		push(ctx, vm_fetch(ctx));
 		break;
 	}
 	case PSHR: {
-		int reg = consume_word(ctx);
+		auto reg = vm_fetch(ctx);
 		push(ctx, ctx->registers[reg]);
 		break;
 	}
 	case POP: {
-		int reg = consume_word(ctx);
-		int val = pop(ctx);
+		auto reg = vm_fetch(ctx);
+		auto val = pop(ctx);
 		ctx->registers[reg] = val;
 		break;
 	}
+	case POPM: {
+		auto addr = vm_fetch(ctx);
+		auto val = pop(ctx);
+		ctx->memory[addr] = val;
+		break;
+	}
 	case ADD: {
-		int ra = consume_word(ctx);
-		int rb = consume_word(ctx);
-		int rc = consume_word(ctx);
-		int val = regv(ctx, rb) + regv(ctx, rc);
+		auto ra = vm_fetch(ctx);
+		auto rb = vm_fetch(ctx);
+		auto rc = vm_fetch(ctx);
+		auto val = regv(ctx, rb) + regv(ctx, rc);
 		ctx->registers[ra] = val;
 		break;
 	}
+	case INC: {
+		auto reg = vm_fetch(ctx);
+		regv(ctx, reg)++;
+		break;
+	}
+	case DEC: {
+		auto reg = vm_fetch(ctx);
+		regv(ctx, reg)--;
+		break;
+	}
 	case SET: {
-		int reg = consume_word(ctx);
-		int val = consume_word(ctx);
+		auto reg = vm_fetch(ctx);
+		auto val = vm_fetch(ctx);
 		ctx->registers[reg] = val;
 		break;
 	}
 	case MOV: {
-		int ra = consume_word(ctx);
-		int rb = consume_word(ctx);
+		auto ra = vm_fetch(ctx);
+		auto rb = vm_fetch(ctx);
 		ctx->registers[ra] = ctx->registers[rb];
+		break;
+	}
+	case MOVM: {
+		auto reg = vm_fetch(ctx);
+		auto addr = vm_fetch(ctx);
+		ctx->memory[addr] = ctx->registers[reg];
+		break;
+	}
+	case MOVR: {
+		auto addr = vm_fetch(ctx);
+		auto reg = vm_fetch(ctx);
+		ctx->registers[reg] = ctx->memory[addr];
 		break;
 	}
 	case HALT:
@@ -162,12 +198,13 @@ void vm_eval(VMContext *ctx, InstructionSet instr)
 		print_stack(ctx);
 		break;
 	case PRNT: {
-		int reg = consume_word(ctx);
-		int val = regv(ctx, reg);
+		auto reg = vm_fetch(ctx);
+		auto val = regv(ctx, reg);
 		printf("%d", val);
 		break;
 	}
 	default:
+		crashvm("Unknown opcode encountered");
 		break;
 	}
 

@@ -22,7 +22,7 @@ namespace
 
 	inline void push(VMContext *c, int val)
 	{
-		if (sp(c) >= VMContext::MAX_STACK_SIZE)
+		if (sp(c) > 0 && sp(c) >= VMContext::MAX_STACK_SIZE)
 		{
 			std::cout << "Stack overflow! Aborting.." << std::endl;
 			quick_exit(EXIT_FAILURE);
@@ -32,7 +32,7 @@ namespace
 
 	inline int consume_word(VMContext *c)
 	{
-		return c->program[++ip(c)];
+		return c->program[ip(c)++];
 	}
 
 	void print_stack(const VMContext *c)
@@ -131,7 +131,7 @@ void vm_eval(VMContext *ctx, InstructionSet instr)
 		int rb = consume_word(ctx);
 		int rc = consume_word(ctx);
 		int val = regv(ctx, rb) + regv(ctx, rc);
-		regv(ctx, ra) = val;
+		ctx->registers[ra] = val;
 		break;
 	}
 	case SET: {

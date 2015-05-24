@@ -10,11 +10,12 @@ enum InstructionSet
     PUSH, // PUSH a     Push a onto the stack
 	PSHR, // PSHR r     Push content of r onto the stack
     POP,  // POP r      Pop the top of the stack into r
-    ADD,  // ADD r s t  Add s and t and put the result into r
+    ADD,  // ADD r s t  Add contents of s and t and put the result into r
     SET,  // SET r a    Set r to a
 	MOV,  // MOV r s    Copy value of s into r
     HALT, // HALT       Stop execution
 	DBG,  // DBG        Print state information
+	PRNT, // PRNT r     Print content of r, formatted as a number      
 
 	INSTRUCTION_COUNT,
 };

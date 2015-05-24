@@ -2,18 +2,17 @@
 
 const int program[] = 
 {
-	PUSH, 5,
-	PUSH, 6,
-	DBG,
-	SET, 0, 22,
-	PUSH, 10,
-	POP, 1,
-	POP, 2,
-	ADD, 0, 1, 2,
-	POP, 4,
-	DBG,
+	SET, 0, 10,
+	SET, 1, 20,
+	ADD, 2, 1, 0,
+	PRNT, 2,
+	PSHR, 2,
+	SET, 2, 0,
+	PRNT, 2,
 	NOP,
-	HALT
+	NOP,
+	NOP,
+	HALT,
 };
 
 int main()

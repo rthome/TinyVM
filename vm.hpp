@@ -30,7 +30,7 @@ enum Registers
     VM_REGISTER_COUNT,
 };
 
-const size_t VM_MEMORY_SIZE = 4096;
+const size_t VM_MEMORY_SIZE = 16384;
 
 struct VMContext
 {

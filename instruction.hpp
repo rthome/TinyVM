@@ -2,6 +2,8 @@
 
 #include "vmtypes.hpp"
 
+// Instruction Opcodes
+// 32 bit reserved
 enum Opcode
 {
 	// Legend:
@@ -28,19 +30,53 @@ enum Opcode
 	INSTRUCTION_COUNT,
 };
 
+// Flags affecting execution of an instruction
+// 8 bits reserved
 enum OpcodeFlags
 {
 
 };
 
-#define INSTRUCTION // TODO: create encoding macro
+// Flags for the interpretation of instruction operands
+// 8 bits reserved
+enum AddressingMode
+{
+    ADDRESSING_INDIRECT = 1, // Operand's target holds address of actual operand value in memory
+    ADDRESSING_REGISTER = 2, // Operand is register number. Mutually exclusive with ADDRESSING_MEMORY and ADDRESSING_LITERAL
+    ADDRESSING_MEMORY   = 4, // Operand is memory address. Mutually exclusive with ADDRESSING_REGISTER and ADDRESSING_LITERAL
+    ADDRESSING_LITERAL  = 8, // Operand is a literal value. Mutually exclusive with every other addressing mode
+};
 
-struct VMInstruction
+// Structure for encoded instructions
+//
+// 4 vmwords: control, operands 0 through 2
+// +----------------+----------------+----------------+----------------+
+// |    control     |    operand0    |    operand1    |    operand2    | = 256bit
+// +----------------+----------------+----------------+----------------+
+// 0                                                                  255
+// All words are unsigned 64-bit integers, but the operands will be interpreted
+// as 2s complement signed integers during execution
+//
+// The control word is divided in 5 fields: opcode, flags, and 3 addressing mode flags
+// +--------------------------------+--------+--------+--------+--------+
+// |            Opcode              | Flags  |  AM0   |  AM1   |  AM2   | = 64bit
+// +--------------------------------+--------+--------+--------+--------+
+// 0                                                                   63
+//              32bit                  8bit     8bit     8bit     8bit
+union VMInstruction
+{
+    vmword words[4];
+    vmword control, op0, op1, op2;
+};
+
+// Structure for decoded instructions
+struct DecodedInstruction
 {
 	Opcode opcode;
 	OpcodeFlags flags;
-	vmword operands[3];
+    AddressingMode addressing[3];
+    vmint operands[3];
 };
 
-vmword encode_instruction();
-VMInstruction decode_instruction();
+VMInstruction vm_encode_instruction(const DecodedInstruction *instr);
+DecodedInstruction vm_decode_instruction(const VMInstruction *instr);

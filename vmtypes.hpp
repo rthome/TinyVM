@@ -3,4 +3,6 @@
 #include <cstdint>
 #include <cstddef>
 
-typedef int64_t vmword;
+typedef uint64_t vmword;
+
+typedef int64_t vmint;

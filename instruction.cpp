@@ -40,3 +40,20 @@ DecodedInstruction vm_decode_instruction(const VMInstruction *instr)
     memcpy(decoded_instruction.operands, instr->words + 1, 3);
     return decoded_instruction;
 }
+
+VMInstruction vm_make_instruction(Opcode op, OpcodeFlags flags,
+                               AddressingMode am0, vmint op0,
+                               AddressingMode am1, vmint op1,
+                               AddressingMode am2, vmint op2)
+{
+    DecodedInstruction decoded_instr;
+    decoded_instr.opcode = op;
+    decoded_instr.flags = flags;
+    decoded_instr.addressing[0] = am0;
+    decoded_instr.addressing[1] = am1;
+    decoded_instr.addressing[2] = am2;
+    decoded_instr.operands[0] = op0;
+    decoded_instr.operands[1] = op1;
+    decoded_instr.operands[2] = op2;
+    return vm_encode_instruction(&decoded_instr);
+}

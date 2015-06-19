@@ -139,21 +139,10 @@ void vm_eval(VMContext *ctx, Opcode instr)
 		push(ctx, vm_fetch(ctx));
 		break;
 	}
-	case PSHR: {
-		auto reg = vm_fetch(ctx);
-		push(ctx, ctx->registers[reg]);
-		break;
-	}
 	case POP: {
 		auto reg = vm_fetch(ctx);
 		auto val = pop(ctx);
 		ctx->registers[reg] = val;
-		break;
-	}
-	case POPM: {
-		auto addr = vm_fetch(ctx);
-		auto val = pop(ctx);
-		ctx->memory[addr] = val;
 		break;
 	}
 	case ADD: {
@@ -184,18 +173,6 @@ void vm_eval(VMContext *ctx, Opcode instr)
 		auto ra = vm_fetch(ctx);
 		auto rb = vm_fetch(ctx);
 		ctx->registers[ra] = ctx->registers[rb];
-		break;
-	}
-	case MOVM: {
-		auto reg = vm_fetch(ctx);
-		auto addr = vm_fetch(ctx);
-		ctx->memory[addr] = ctx->registers[reg];
-		break;
-	}
-	case MOVR: {
-		auto addr = vm_fetch(ctx);
-		auto reg = vm_fetch(ctx);
-		ctx->registers[reg] = ctx->memory[addr];
 		break;
 	}
 	case HALT:

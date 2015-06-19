@@ -1,31 +1,34 @@
 #include "vm.hpp"
+#include "instruction.hpp"
 
-const vmword program[] = 
+#define INSTR vm_make_instruction
+
+const VMInstruction program[] =
 {
-	PUSH, 1,
-	PUSH, 2,
-	PUSH, 3,
-	SET, 0, 10,
-	SET, 1, 20,
-	ADD, 2, 1, 0,
-	PRNT, 2,
-	PSHR, 2,
-	SET, 2, 0,
-	PRNT, 2,
-	POP, 3,
-	POP, 4,
-	NOP,
-	DEC, 0,
-	NOP,
-	NOP,
-	HALT,
+    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 1),
+    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 2),
+    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 3),
+    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 0, ADDR_LITERAL, 10),
+    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 1, ADDR_LITERAL, 20),
+    INSTR(ADD, OF_NORMAL, ADDR_REGISTER, 2, ADDR_REGISTER, 1, ADDR_REGISTER, 0),
+    INSTR(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
+    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 2),
+    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 2, ADDR_LITERAL, 0),
+    INSTR(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
+    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 3),
+    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 4),
+    INSTR(NOP),
+    INSTR(DEC, OF_NORMAL, ADDR_REGISTER, 0),
+    INSTR(NOP),
+    INSTR(NOP),
+    INSTR(HALT),
 };
 
 int main()
 {
 	VMContext *ctx = vm_create_context();
 	vm_set_program_base(ctx, 128);
-	vm_load_program(ctx, program, sizeof(program));
+    vm_load_program(ctx, (vmword*)program, sizeof(program));
 
 	while (ctx->running)
 	{

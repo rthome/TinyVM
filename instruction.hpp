@@ -13,16 +13,12 @@ enum Opcode
 
 	NOP,  // NOP        Do nothing (still increment ic)
 	PUSH, // PUSH a     Push a onto the stack
-	PSHR, // PSHR r     Push content of r onto the stack
 	POP,  // POP r      Pop the top of the stack into a register
-	POPM, // POPM x     Pop the top of the stack into memory
 	ADD,  // ADD r s t  Add contents of s and t and put the result into r
 	INC,  // INC r      Increment contents of r
 	DEC,  // DEC r      Decrement contents of r
 	SET,  // SET r a    Set r to a
 	MOV,  // MOV r s    Copy value of s into r
-	MOVM, // MOVM r x   Copy from register to memory (r to x)
-	MOVR, // MOVR x r   Copy from memory to register (x to r)
 	HALT, // HALT       Stop execution
 	DBG,  // DBG        Print state information
 	PRNT, // PRNT r     Print content of r, formatted as a number      
@@ -34,17 +30,17 @@ enum Opcode
 // 8 bits reserved
 enum OpcodeFlags
 {
-
+    OF_NORMAL, // Specifies normal execution
 };
 
 // Flags for the interpretation of instruction operands
 // 8 bits reserved
 enum AddressingMode
 {
-    ADDRESSING_INDIRECT = 1, // Operand's target holds address of actual operand value in memory
-    ADDRESSING_REGISTER = 2, // Operand is register number. Mutually exclusive with ADDRESSING_MEMORY and ADDRESSING_LITERAL
-    ADDRESSING_MEMORY   = 4, // Operand is memory address. Mutually exclusive with ADDRESSING_REGISTER and ADDRESSING_LITERAL
-    ADDRESSING_LITERAL  = 8, // Operand is a literal value. Mutually exclusive with every other addressing mode
+    ADDR_INDIRECT = 1, // Operand's target holds address of actual operand value in memory
+    ADDR_REGISTER = 2, // Operand is register number. Mutually exclusive with ADDR_MEMORY and ADDR_LITERAL
+    ADDR_MEMORY   = 4, // Operand is memory address. Mutually exclusive with ADDR_REGISTER and ADDR_LITERAL
+    ADDR_LITERAL  = 8, // Operand is a literal value. Mutually exclusive with every other addressing mode
 };
 
 // Structure for encoded instructions
@@ -78,5 +74,14 @@ struct DecodedInstruction
     vmint operands[3];
 };
 
+// Encode an instruction
 VMInstruction vm_encode_instruction(const DecodedInstruction *instr);
+
+// Decode an instruction
 DecodedInstruction vm_decode_instruction(const VMInstruction *instr);
+
+// Helper function for "inline" creation of encoded instruction
+VMInstruction vm_make_instruction(Opcode op, OpcodeFlags flags = OF_NORMAL,
+                                  AddressingMode am0 = (AddressingMode)0, vmint op0 = 0,
+                                  AddressingMode am1 = (AddressingMode)0, vmint op1 = 0,
+                                  AddressingMode am2 = (AddressingMode)0, vmint op2 = 0);

@@ -12,6 +12,7 @@
 #define sp(ctx) ((ctx)->registers[SP])
 #define sbp(ctx) ((ctx)->registers[SBP])
 #define ip(ctx) ((ctx)->registers[IP])
+#define ic(ctx) ((ctx)->registers[IC])
 
 #define regv(ctx, r) ((ctx)->registers[(r)])
 #define stack(ctx) ((ctx)->memory + sbp(ctx)) // base address of the stack for the given context
@@ -47,7 +48,7 @@ namespace
 
 	void print_stack(const VMContext *c)
 	{
-		std::cout << "Stack dump @ ic " << c->ic;
+        std::cout << "Stack dump @ ic " << ic(c);
 		for (size_t i = sbp(c); i >= 0; i--)
 		{
 			if (i % 5 == 0)
@@ -59,7 +60,7 @@ namespace
 
 	void print_registers(const VMContext *c)
 	{
-		std::cout << "Register state dump @ ic " << c->ic << std::endl;
+        std::cout << "Register state dump @ ic " << ic(c) << std::endl;
 		std::cout << "  R0 = " << regv(c, R0) << std::endl;
 		std::cout << "  R1 = " << regv(c, R1) << std::endl;
 		std::cout << "  R2 = " << regv(c, R2) << std::endl;
@@ -70,13 +71,13 @@ namespace
 		std::cout << "  R7 = " << regv(c, R7) << std::endl;
 		std::cout << "  R8 = " << regv(c, R8) << std::endl;
         std::cout << "  R9 = " << regv(c, R9) << std::endl;
-        std::cout << "  R9 = " << regv(c, R10) << std::endl;
-        std::cout << "  R9 = " << regv(c, R11) << std::endl;
-        std::cout << "  R9 = " << regv(c, R12) << std::endl;
-        std::cout << "  R9 = " << regv(c, R13) << std::endl;
-        std::cout << "  R9 = " << regv(c, R14) << std::endl;
-        std::cout << "  R9 = " << regv(c, R15) << std::endl;
-        std::cout << "  R9 = " << regv(c, R9) << std::endl;
+        std::cout << "  R10 = " << regv(c, R10) << std::endl;
+        std::cout << "  R11 = " << regv(c, R11) << std::endl;
+        std::cout << "  R12 = " << regv(c, R12) << std::endl;
+        std::cout << "  R13 = " << regv(c, R13) << std::endl;
+        std::cout << "  R14 = " << regv(c, R14) << std::endl;
+        std::cout << "  R15 = " << regv(c, R15) << std::endl;
+        std::cout << "  IC = " << regv(c, IC) << std::endl;
 		std::cout << "  IP = " << regv(c, IP) << std::endl;
 		std::cout << "  SP = " << regv(c, SP) << std::endl;
 		std::cout << "  SBP = " << regv(c, SBP) << std::endl;
@@ -215,5 +216,5 @@ void vm_eval(VMContext *ctx, Opcode instr)
 		break;
 	}
 
-	ctx->ic++;
+    ctx->registers[IC]++;
 }

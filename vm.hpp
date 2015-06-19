@@ -15,23 +15,29 @@ enum Registers
 	R7,
 	R8,
 	R9,
+    R10,
+    R11,
+    R12,
+    R13,
+    R14,
+    R15,
 
 	IP, // Instruction pointer
 	SP, // Stack pointer
 	SBP, // Stack base pointer
 
-	REGISTER_COUNT,
+    VM_REGISTER_COUNT,
 };
+
+const size_t VM_MEMORY_SIZE = 4096;
 
 struct VMContext
 {
-	static const size_t MEMORY_SIZE = 4096;
-
 	bool running = true;
 	size_t ic = 0; // Instruction counter
 
-	vmword registers[REGISTER_COUNT];
-	vmword memory[MEMORY_SIZE];
+    vmword registers[VM_REGISTER_COUNT];
+    vmword memory[VM_MEMORY_SIZE];
 };
 
 // Create a new VM context

@@ -69,7 +69,14 @@ namespace
 		std::cout << "  R6 = " << regv(c, R6) << std::endl;
 		std::cout << "  R7 = " << regv(c, R7) << std::endl;
 		std::cout << "  R8 = " << regv(c, R8) << std::endl;
-		std::cout << "  R9 = " << regv(c, R9) << std::endl;
+        std::cout << "  R9 = " << regv(c, R9) << std::endl;
+        std::cout << "  R9 = " << regv(c, R10) << std::endl;
+        std::cout << "  R9 = " << regv(c, R11) << std::endl;
+        std::cout << "  R9 = " << regv(c, R12) << std::endl;
+        std::cout << "  R9 = " << regv(c, R13) << std::endl;
+        std::cout << "  R9 = " << regv(c, R14) << std::endl;
+        std::cout << "  R9 = " << regv(c, R15) << std::endl;
+        std::cout << "  R9 = " << regv(c, R9) << std::endl;
 		std::cout << "  IP = " << regv(c, IP) << std::endl;
 		std::cout << "  SP = " << regv(c, SP) << std::endl;
 		std::cout << "  SBP = " << regv(c, SBP) << std::endl;
@@ -114,7 +121,7 @@ void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n)
 
 vmword vm_fetch(VMContext *ctx)
 {
-	if (ip(ctx) >= VMContext::MEMORY_SIZE)
+    if (ip(ctx) >= VM_MEMORY_SIZE)
 		crashvm("IP overflowing memory! Aborting..");
 
 	return ctx->memory[ip(ctx)++];

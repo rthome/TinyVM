@@ -26,71 +26,37 @@ enum Opcode
 	INSTRUCTION_COUNT,
 };
 
-// Flags affecting execution of an instruction
-// 8 bits reserved
 enum OpcodeFlags
 {
-    OF_NORMAL, // Specifies normal execution
+	OF_NORMAL, // No special behavior
 };
 
-// Flags for the interpretation of instruction operands
-// 8 bits reserved
 enum AddressingMode
 {
-    ADDR_INDIRECT = 1, // Operand's target holds address of actual operand value in memory
-    ADDR_REGISTER = 2, // Operand is register number. Mutually exclusive with ADDR_MEMORY and ADDR_LITERAL
-    ADDR_MEMORY   = 4, // Operand is memory address. Mutually exclusive with ADDR_REGISTER and ADDR_LITERAL
-    ADDR_LITERAL  = 8, // Operand is a literal value. Mutually exclusive with every other addressing mode
+	AM_INDIRECT = 1, // Operand target contains location of operand value in memory
+	AM_LITERAL  = 2, // Operand value is a literal
+	AM_MEMORY   = 4, // Operand points to a memory word
+	AM_REGISTER = 8, // Operand is a register index
 };
 
-// Structure for encoded instructions
-//
-// 4 vmwords: control, operands 0 through 2
-// +----------------+----------------+----------------+----------------+
-// |    control     |    operand0    |    operand1    |    operand2    | = 256bit
-// +----------------+----------------+----------------+----------------+
-// 0                                                                  255
-// All words are unsigned 64-bit integers, but the operands will be interpreted
-// as 2s complement signed integers during execution
-//
-// The control word is divided in 5 fields: opcode, flags, and 3 addressing mode flags
-// +--------------------------------+--------+--------+--------+--------+
-// |            Opcode              | Flags  |  AM0   |  AM1   |  AM2   | = 64bit
-// +--------------------------------+--------+--------+--------+--------+
-// 0                                                                   63
-//              32bit                  8bit     8bit     8bit     8bit
-struct VMInstruction
+struct InstructionData
 {
 	vmword words[4];
 };
 
-// Structure for decoded instructions
-struct DecodedInstruction
+struct Instruction
 {
 	Opcode opcode;
 	OpcodeFlags flags;
-    AddressingMode addressing[3];
-    vmint operands[3];
+	AddressingMode addressing[3];
+	vmint operands[3];
 };
 
-// Result for instruction validation API
-struct VMValidationResult
-{
-	bool ok;
-	const char *msg;
-};
+// Encode the instruction into 4 vmwords
+InstructionData vmi_encode(const Instruction *intr);
 
-// Encode an instruction
-VMInstruction vm_encode_instruction(const DecodedInstruction *instr);
+// Decode the given instruction data
+Instruction vmi_decode(const InstructionData *data);
 
-// Decode an instruction
-DecodedInstruction vm_decode_instruction(const VMInstruction *instr);
-
-// Helper function for "inline" creation of encoded instruction
-VMInstruction vm_make_instruction(Opcode op, OpcodeFlags flags = OF_NORMAL,
-                                  AddressingMode am0 = (AddressingMode)0, vmint op0 = 0,
-                                  AddressingMode am1 = (AddressingMode)0, vmint op1 = 0,
-                                  AddressingMode am2 = (AddressingMode)0, vmint op2 = 0);
-
-// Validate an instruction
-VMValidationResult vm_validate_instruction(const DecodedInstruction *instr);
+// Read instruction data from memory
+InstructionData vmi_read(const vmword *memory, size_t offset = 0);

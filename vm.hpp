@@ -40,27 +40,47 @@ struct VMContext
     vmword memory[VM_MEMORY_SIZE];
 };
 
-// Create a new VM context
-VMContext *vm_create_context();
+template<size_t Index>
+inline vmword vm_fetch_operand(const VMContext *ctx, const Instruction *instr)
+{
+	static_assert(op < 3);
+	auto operand = instr->operands[Index];
+	auto mode = instr->addressing[Index];
+	
+	vmword value;
+	if (mode & AM_LITERAL)
+		value = operand;
+	else if (mode & AM_MEMORY)
+		value = ctx->memory[operand];
+	else if (mode & AM_REGISTER)
+		value = ctx->registers[operand];
 
-// Reset a context to its initial state
-void vm_reset_context(VMContext *ctx);
+	if (mode & AM_INDIRECT)
+		value = ctx->memory[value];
 
-// Destroy a context
-void vm_destroy_context(VMContext *ctx);
+	return value;
+}
 
-// Crash the VM instantly
-void vm_crash(VMContext *ctx, const char *msg);
+// Create a new vm context and reset it
+VMContext* vm_create();
 
-// Set the instruction pointer to value
-void vm_set_program_base(VMContext *ctx, vmword value);
+// Destroy the given vm context
+void vm_destroy(VMContext *ctx);
 
-// Load a program into the given context at ip
-// n = number of bytes to load
-void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n);
+// Reset the given vm context, basically zeroing everything
+void vm_reset(VMContext *ctx);
 
-// Fetch the next instruction and decode it
-DecodedInstruction vm_fetch_decode(VMContext *ctx);
+// Initialize the stack by setting sp and sbp and zeroing the stack
+void vm_init_stack(VMContext *ctx, vmword stacksize);
 
-// Evaluate an instruction given a VM context
-void vm_eval(VMContext *ctx, DecodedInstruction *instr);
+// Set ip to the given value
+void vm_init_programbase(VMContext *ctx, vmword location);
+
+// Load the given number of instructions into memory, starting at ip
+void vm_load_program(VMContext *ctx, InstructionData *data, size_t count);
+
+// Fetch and decode the next instruction
+Instruction vm_fetch_decode(VMContext *ctx);
+
+// Execute the given instruction
+void vm_execute(VMContext *ctx, const Instruction *instr);

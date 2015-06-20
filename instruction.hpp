@@ -49,7 +49,7 @@ struct Instruction
 	Opcode opcode;
 	OpcodeFlags flags;
 	AddressingMode addressing[3];
-	vmint operands[3];
+	vmword operands[3];
 };
 
 // Encode the instruction into 4 vmwords

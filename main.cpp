@@ -1,27 +1,24 @@
 #include "vm.hpp"
-#include "instruction.hpp"
-
-#define INSTR vm_make_instruction
 
 const VMInstruction program[] =
 {
-    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 1),
-    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 2),
-    INSTR(PUSH, OF_NORMAL, ADDR_LITERAL, 3),
-    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 0, ADDR_LITERAL, 10),
-    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 1, ADDR_LITERAL, 20),
-    INSTR(ADD, OF_NORMAL, ADDR_REGISTER, 2, ADDR_REGISTER, 1, ADDR_REGISTER, 0),
-    INSTR(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
-    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 2),
-    INSTR(SET, OF_NORMAL, ADDR_REGISTER, 2, ADDR_LITERAL, 0),
-    INSTR(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
-    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 3),
-    INSTR(PUSH, OF_NORMAL, ADDR_REGISTER, 4),
-    INSTR(NOP),
-    INSTR(DEC, OF_NORMAL, ADDR_REGISTER, 0),
-    INSTR(NOP),
-    INSTR(NOP),
-    INSTR(HALT),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_LITERAL, 1),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_LITERAL, 2),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_LITERAL, 3),
+    vm_make_instruction(SET, OF_NORMAL, ADDR_REGISTER, 0, ADDR_LITERAL, 10),
+    vm_make_instruction(SET, OF_NORMAL, ADDR_REGISTER, 1, ADDR_LITERAL, 20),
+    vm_make_instruction(ADD, OF_NORMAL, ADDR_REGISTER, 2, ADDR_REGISTER, 1, ADDR_REGISTER, 0),
+    vm_make_instruction(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_REGISTER, 2),
+    vm_make_instruction(SET, OF_NORMAL, ADDR_REGISTER, 2, ADDR_LITERAL, 0),
+    vm_make_instruction(PRNT, OF_NORMAL, ADDR_REGISTER, 2),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_REGISTER, 3),
+    vm_make_instruction(PUSH, OF_NORMAL, ADDR_REGISTER, 4),
+    vm_make_instruction(NOP),
+    vm_make_instruction(DEC, OF_NORMAL, ADDR_REGISTER, 0),
+    vm_make_instruction(NOP),
+    vm_make_instruction(NOP),
+    vm_make_instruction(HALT),
 };
 
 int main()
@@ -32,8 +29,11 @@ int main()
 
 	while (ctx->running)
 	{
-		auto instr = vm_fetch(ctx);
-		vm_eval(ctx, (Opcode)instr);
+		auto instr = vm_fetch_decode(ctx);
+		auto validation = vm_validate_instruction(&instr);
+		if (!validation.ok)
+			vm_crash(ctx, validation.msg);
+		vm_eval(ctx, &instr);
 	}
 
 	vm_destroy_context(ctx);

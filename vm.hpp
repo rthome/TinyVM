@@ -49,6 +49,9 @@ void vm_reset_context(VMContext *ctx);
 // Destroy a context
 void vm_destroy_context(VMContext *ctx);
 
+// Crash the VM instantly
+void vm_crash(VMContext *ctx, const char *msg);
+
 // Set the instruction pointer to value
 void vm_set_program_base(VMContext *ctx, vmword value);
 
@@ -56,8 +59,8 @@ void vm_set_program_base(VMContext *ctx, vmword value);
 // n = number of bytes to load
 void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n);
 
-// Fetch the next instruction
-vmword vm_fetch(VMContext *ctx);
+// Fetch the next instruction and decode it
+DecodedInstruction vm_fetch_decode(VMContext *ctx);
 
 // Evaluate an instruction given a VM context
-void vm_eval(VMContext *ctx, Opcode instr);
+void vm_eval(VMContext *ctx, DecodedInstruction *instr);

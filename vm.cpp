@@ -21,16 +21,10 @@
 
 namespace
 {
-	inline void crashvm(const char *msg)
-	{
-		std::cout << msg << std::endl;
-		quick_exit(EXIT_FAILURE);
-	}
-
 	inline vmword pop(VMContext *c)
 	{
 		if (sp(c) < 0)
-			crashvm("Stack underflow! Aborting..");
+			vm_crash(c, "Stack underflow! Aborting..");
 
 		vmword val = stackp(c); // get top of stack
 		sp(c)--; // decrement stack pointer
@@ -40,7 +34,7 @@ namespace
 	inline void push(VMContext *c, vmword val)
 	{
 		if (sp(c) > 0 && sp(c) > sbp(c))
-			crashvm("Stack overflow! Aborting..");
+			vm_crash(c, "Stack overflow! Aborting..");
 		
 		sp(c)++; // increment stack pointer
 		stackp(c) = val; // set value
@@ -82,6 +76,34 @@ namespace
 		std::cout << "  SP = " << regv(c, SP) << std::endl;
 		std::cout << "  SBP = " << regv(c, SBP) << std::endl;
 	}
+
+	vmword fetch_operand(const VMContext *ctx, const DecodedInstruction *instr, size_t op)
+	{
+		auto opval = instr->operands[op];
+		auto addrm = instr->addressing[op];
+
+		vmword fetched_val;
+		switch (addrm)
+		{
+		case ADDR_LITERAL:
+			fetched_val = opval;
+		case ADDR_REGISTER:
+			fetched_val = ctx->registers[opval];
+			break;
+		case ADDR_MEMORY:
+			fetched_val = ctx->memory[opval];
+			break;
+		}
+
+		// Perform indirection if needed
+		if (addrm & ADDR_INDIRECT)
+		{
+			if (addrm & ADDR_REGISTER || addrm & ADDR_MEMORY)
+				fetched_val = ctx->memory[fetched_val];
+		}
+
+		return fetched_val;
+	}
 }
 
 // // //
@@ -110,6 +132,12 @@ void vm_destroy_context(VMContext *ctx)
 	delete ctx;
 }
 
+void vm_crash(VMContext *ctx, const char *msg)
+{
+	std::cout << msg << std::endl;
+	quick_exit(EXIT_FAILURE);
+}
+
 void vm_set_program_base(VMContext *ctx, vmword value)
 {
 	ip(ctx) = value;
@@ -118,81 +146,33 @@ void vm_set_program_base(VMContext *ctx, vmword value)
 void vm_load_program(VMContext *ctx, const vmword *progbuf, size_t n)
 {
     auto program_base_ptr = ctx->memory + ip(ctx);
-    if ((size_t)program_base_ptr + n >= VM_MEMORY_SIZE)
-        crashvm("Memory upper limit exceeded while loading program! Aborting...");
+    if (ip(ctx) + n >= VM_MEMORY_SIZE)
+        vm_crash(ctx, "Memory upper limit exceeded while loading program! Aborting...");
     memcpy(program_base_ptr, progbuf, n);
 }
 
-vmword vm_fetch(VMContext *ctx)
+DecodedInstruction vm_fetch_decode(VMContext *ctx)
 {
     if (ip(ctx) >= VM_MEMORY_SIZE)
-		crashvm("IP overflowing memory! Aborting..");
+		vm_crash(ctx, "IP running past memory limit! Aborting..");
 
-	return ctx->memory[ip(ctx)++];
+	auto addr = reinterpret_cast<VMInstruction *>(ctx->memory + ip(ctx));
+	auto instr = vm_decode_instruction(addr);
+
+	return instr;
 }
 
-void vm_eval(VMContext *ctx, Opcode instr)
+void vm_eval(VMContext *ctx, DecodedInstruction *instr)
 {
-	switch (instr)
+	switch (instr->opcode)
 	{
 	case PUSH: {
-		push(ctx, vm_fetch(ctx));
+		push(ctx, fetch_operand(ctx, instr, 0));
 		break;
 	}
-	case POP: {
-		auto reg = vm_fetch(ctx);
-		auto val = pop(ctx);
-		ctx->registers[reg] = val;
-		break;
-	}
-	case ADD: {
-		auto ra = vm_fetch(ctx);
-		auto rb = vm_fetch(ctx);
-		auto rc = vm_fetch(ctx);
-		auto val = regv(ctx, rb) + regv(ctx, rc);
-		ctx->registers[ra] = val;
-		break;
-	}
-	case INC: {
-		auto reg = vm_fetch(ctx);
-		regv(ctx, reg)++;
-		break;
-	}
-	case DEC: {
-		auto reg = vm_fetch(ctx);
-		regv(ctx, reg)--;
-		break;
-	}
-	case SET: {
-		auto reg = vm_fetch(ctx);
-		auto val = vm_fetch(ctx);
-		ctx->registers[reg] = val;
-		break;
-	}
-	case MOV: {
-		auto ra = vm_fetch(ctx);
-		auto rb = vm_fetch(ctx);
-		ctx->registers[ra] = ctx->registers[rb];
-		break;
-	}
-	case HALT:
-		ctx->running = false;
-		break;
-	case NOP:
-		// Do nothing
-		break;
-	case DBG:
-		print_registers(ctx);
-		print_stack(ctx);
-		break;
-	case PRNT: {
-		auto reg = vm_fetch(ctx);
-		auto val = regv(ctx, reg);
-		printf("%d", val);
-		break;
-	}
+	// TODO: Implement instructions
 	default:
-		crashvm("Unknown opcode encountered");
+		vm_crash(ctx, "Unknown opcode encountered");
 		break;
 	}
 

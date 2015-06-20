@@ -59,10 +59,9 @@ enum AddressingMode
 // +--------------------------------+--------+--------+--------+--------+
 // 0                                                                   63
 //              32bit                  8bit     8bit     8bit     8bit
-union VMInstruction
+struct VMInstruction
 {
-    vmword words[4];
-    vmword control, op0, op1, op2;
+	vmword words[4];
 };
 
 // Structure for decoded instructions
@@ -72,6 +71,13 @@ struct DecodedInstruction
 	OpcodeFlags flags;
     AddressingMode addressing[3];
     vmint operands[3];
+};
+
+// Result for instruction validation API
+struct VMValidationResult
+{
+	bool ok;
+	const char *msg;
 };
 
 // Encode an instruction
@@ -85,3 +91,6 @@ VMInstruction vm_make_instruction(Opcode op, OpcodeFlags flags = OF_NORMAL,
                                   AddressingMode am0 = (AddressingMode)0, vmint op0 = 0,
                                   AddressingMode am1 = (AddressingMode)0, vmint op1 = 0,
                                   AddressingMode am2 = (AddressingMode)0, vmint op2 = 0);
+
+// Validate an instruction
+VMValidationResult vm_validate_instruction(const DecodedInstruction *instr);

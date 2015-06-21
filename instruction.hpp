@@ -10,15 +10,15 @@ enum Opcode
 	//   a, b, c - operands (interpret as "value of")
 
 	OP_NOP,  // NOP        Do nothing (still increment ic)
+	OP_DBG,  // DBG        Print state information
+	OP_HALT, // HALT       Stop execution
+	OP_PRNT, // PRNT a     Print content of a, formatted as a number      
 	OP_PUSH, // PUSH a     Push a onto the stack
 	OP_POP,  // POP a      Pop the top of the stack into a
 	OP_ADD,  // ADD a b c  Add b and c and put the result into a
 	OP_INC,  // INC a      Increment a
 	OP_DEC,  // DEC a      Decrement a
 	OP_MOV,  // MOV a b    Copy b into a
-	OP_HALT, // HALT       Stop execution
-	OP_DBG,  // DBG        Print state information
-	OP_PRNT, // PRNT a     Print content of a, formatted as a number      
 
 	INSTRUCTION_COUNT,
 };

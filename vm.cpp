@@ -158,8 +158,19 @@ void vm_execute(VMContext *ctx, const Instruction *instr)
 {
 	switch (instr->opcode)
 	{
-	case OP_NOP:
+	case OP_NOP: {
 		break;
+	}
+	case OP_HALT: {
+		ctx->running = false;
+		break;
+	}
+	case OP_DBG: {
+		break;
+	}
+	case OP_PRNT: {
+		break;
+	}
 	case OP_PUSH: {
 		auto op = operand_fetch<0>(ctx, instr);
 		stack_push(ctx, op);
@@ -197,14 +208,9 @@ void vm_execute(VMContext *ctx, const Instruction *instr)
 		operand_assign_at<0>(ctx, instr, a);
 		break;
 	}
-	case OP_HALT: {
-		ctx->running = false;
-		break;
-	}
-	case OP_DBG: {
-		break;
-	}
-	case OP_PRNT: {
+	case OP_JMP: {
+		auto a = operand_fetch<0>(ctx, instr);
+		ctx->registers[IP] = a;
 		break;
 	}
 

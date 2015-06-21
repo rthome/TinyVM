@@ -19,6 +19,7 @@ enum Opcode
 	OP_INC,  // INC a      Increment a
 	OP_DEC,  // DEC a      Decrement a
 	OP_MOV,  // MOV a b    Copy b into a
+	OP_JMP,  // JMP a      Jump to a. Value of a must be 4-word aligned.
 
 	INSTRUCTION_COUNT,
 };

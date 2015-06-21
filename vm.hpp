@@ -40,27 +40,6 @@ struct VMContext
     vmword memory[VM_MEMORY_SIZE];
 };
 
-template<size_t Index>
-inline vmword vm_fetch_operand(const VMContext *ctx, const Instruction *instr)
-{
-	static_assert(op < 3);
-	auto operand = instr->operands[Index];
-	auto mode = instr->addressing[Index];
-	
-	vmword value;
-	if (mode & AM_LITERAL)
-		value = operand;
-	else if (mode & AM_MEMORY)
-		value = ctx->memory[operand];
-	else if (mode & AM_REGISTER)
-		value = ctx->registers[operand];
-
-	if (mode & AM_INDIRECT)
-		value = ctx->memory[value];
-
-	return value;
-}
-
 // Create a new vm context and reset it
 VMContext* vm_create();
 
@@ -78,6 +57,9 @@ void vm_init_programbase(VMContext *ctx, vmword location);
 
 // Load the given number of instructions into memory, starting at ip
 void vm_load_program(VMContext *ctx, InstructionData *data, size_t count);
+
+// Report an error and stop execution
+void vm_error(VMContext *ctx, const char *message);
 
 // Fetch and decode the next instruction
 Instruction vm_fetch_decode(VMContext *ctx);

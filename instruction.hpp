@@ -15,7 +15,7 @@ enum Opcode
 	OP_ADD,  // ADD a b c  Add b and c and put the result into a
 	OP_INC,  // INC a      Increment a
 	OP_DEC,  // DEC a      Decrement a
-	OP_MOV,  // MOV a b    Copy a into b
+	OP_MOV,  // MOV a b    Copy b into a
 	OP_HALT, // HALT       Stop execution
 	OP_DBG,  // DBG        Print state information
 	OP_PRNT, // PRNT a     Print content of a, formatted as a number      

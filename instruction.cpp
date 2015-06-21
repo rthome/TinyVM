@@ -7,7 +7,7 @@ namespace
 {
 	vmword encode_controlword(const Instruction *instr)
 	{
-		return (static_cast<uint32_t>(instr->opcode) << 32)
+		return (static_cast<uint64_t>(instr->opcode) << 32)
 			| (static_cast<uint8_t>(instr->flags) << 24)
 			| (static_cast<uint8_t>(instr->addressing[0]) << 16)
 			| (static_cast<uint8_t>(instr->addressing[1]) << 8)

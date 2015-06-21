@@ -3,19 +3,19 @@
 #include <cstring>
 
 // Make a nullary instruction
-inline Instruction vmi_make_instr_0(Opcode opcode, OpcodeFlags flags)
+Instruction vmi_make_instr_0(Opcode opcode, OpcodeFlags flags)
 {
 	return Instruction{ opcode, flags };
 }
 
-inline InstructionData vmi_encode_instr_0(Opcode opcode, OpcodeFlags flags)
+InstructionData vmi_encode_instr_0(Opcode opcode, OpcodeFlags flags)
 {
 	auto instr = vmi_make_instr_0(opcode, flags);
 	return vmi_encode(&instr);
 }
 
 // Make a unary instruction
-inline Instruction vmi_make_instr_1(Opcode opcode, OpcodeFlags flags,
+Instruction vmi_make_instr_1(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0)
 {
 	Instruction instr{ opcode, flags };
@@ -24,7 +24,7 @@ inline Instruction vmi_make_instr_1(Opcode opcode, OpcodeFlags flags,
 	return instr;
 }
 
-inline InstructionData vmi_encode_instr_1(Opcode opcode, OpcodeFlags flags,
+InstructionData vmi_encode_instr_1(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0)
 {
 	auto instr = vmi_make_instr_1(opcode, flags, am0, op0);
@@ -32,7 +32,7 @@ inline InstructionData vmi_encode_instr_1(Opcode opcode, OpcodeFlags flags,
 }
 
 // Make a binary instruction
-inline Instruction vmi_make_instr_2(Opcode opcode, OpcodeFlags flags,
+Instruction vmi_make_instr_2(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0,
 	AddressingMode am1, vmword op1)
 {
@@ -44,7 +44,7 @@ inline Instruction vmi_make_instr_2(Opcode opcode, OpcodeFlags flags,
 	return instr;
 }
 
-inline InstructionData vmi_encode_instr_2(Opcode opcode, OpcodeFlags flags,
+InstructionData vmi_encode_instr_2(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0,
 	AddressingMode am1, vmword op1)
 {
@@ -53,7 +53,7 @@ inline InstructionData vmi_encode_instr_2(Opcode opcode, OpcodeFlags flags,
 }
 
 // Make a tertiary instruction
-inline Instruction vmi_make_instr_3(Opcode opcode, OpcodeFlags flags,
+Instruction vmi_make_instr_3(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0,
 	AddressingMode am1, vmword op1,
 	AddressingMode am2, vmword op2)
@@ -68,7 +68,7 @@ inline Instruction vmi_make_instr_3(Opcode opcode, OpcodeFlags flags,
 	return instr;
 }
 
-inline InstructionData vmi_encode_instr_3(Opcode opcode, OpcodeFlags flags,
+InstructionData vmi_encode_instr_3(Opcode opcode, OpcodeFlags flags,
 	AddressingMode am0, vmword op0,
 	AddressingMode am1, vmword op1,
 	AddressingMode am2, vmword op2)

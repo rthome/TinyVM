@@ -89,8 +89,10 @@ void vm_execute(VMContext *ctx, const Instruction *instr)
 	{
 	case OP_NOP:
 		break;
-	case PUSH:
+	case OP_PUSH: {
 
+		break;
+	}
 	}
 	ctx->registers[IC]++;
 }

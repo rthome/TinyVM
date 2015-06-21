@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <cstdlib>
 
 #include <iostream>
 
@@ -23,14 +24,16 @@ namespace
 
 	inline vmword* stack_inc(VMContext *ctx)
 	{
-		// TODO: Check stack boundaries
+		if (ctx->registers[SP] >= ctx->registers[SBP])
+			vm_error(ctx, "Stack overflow");
 		ctx->registers[SP]++;
 		return stack_top(ctx);
 	}
 
 	inline vmword* stack_dec(VMContext *ctx)
 	{
-		// TODO: Check stack boundaries
+		if (ctx->registers[SP] <= 0)
+			vm_error(ctx, "Stack underflow");
 		ctx->registers[SP]--;
 		return stack_top(ctx);
 	}
@@ -61,10 +64,7 @@ namespace
 		auto mode = instr->addressing[Index];
 
 		if (mode & AM_LITERAL)
-		{
 			vm_error(ctx, "Trying to assign to a literal operand.");
-			return;
-		}
 
 		vmword *target;
 		if (mode & AM_REGISTER)
@@ -123,7 +123,7 @@ void vm_reset(VMContext *ctx)
 
 void vm_init_stack(VMContext *ctx, size_t stacksize)
 {
-	ctx->registers[SP] = -1;
+	ctx->registers[SP] = 0;
 	ctx->registers[SBP] = stacksize;
 }
 
@@ -143,6 +143,7 @@ void vm_error(VMContext *ctx, const char *message)
 	ctx->running = false;
 	// TODO: Add some more information
 	std::cout << "Error caught: " << message << std::endl;
+	exit(-1);
 }
 
 Instruction vm_fetch_decode(VMContext *ctx)

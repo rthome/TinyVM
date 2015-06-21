@@ -2,12 +2,6 @@
 
 #include <cstring>
 
-inline void vmi_assemble(vmword *buffer, const InstructionData *instructions, size_t count)
-{
-	for (size_t i = 0; i < count; i++)
-		memcpy(buffer + 4 * i, instructions[i].words, 4 * sizeof(vmword));
-}
-
 // Make a nullary instruction
 inline Instruction vmi_make_instr_0(Opcode opcode, OpcodeFlags flags)
 {

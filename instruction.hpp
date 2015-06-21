@@ -7,28 +7,25 @@
 enum Opcode
 {
 	// Legend:
-	//   a,b,c - literal value
-	//   r,s,t - register index
-	//   x,y,z - memory address
+	//   a, b, c - operands (interpret as "value of")
 
-	NOP,  // NOP        Do nothing (still increment ic)
-	PUSH, // PUSH a     Push a onto the stack
-	POP,  // POP r      Pop the top of the stack into a register
-	ADD,  // ADD r s t  Add contents of s and t and put the result into r
-	INC,  // INC r      Increment contents of r
-	DEC,  // DEC r      Decrement contents of r
-	SET,  // SET r a    Set r to a
-	MOV,  // MOV r s    Copy value of s into r
-	HALT, // HALT       Stop execution
-	DBG,  // DBG        Print state information
-	PRNT, // PRNT r     Print content of r, formatted as a number      
+	OP_NOP,  // NOP        Do nothing (still increment ic)
+	OP_PUSH, // PUSH a     Push a onto the stack
+	OP_POP,  // POP a      Pop the top of the stack into a
+	OP_ADD,  // ADD a b c  Add b and c and put the result into a
+	OP_INC,  // INC a      Increment a
+	OP_DEC,  // DEC a      Decrement a
+	OP_MOV,  // MOV a b    Copy a into b
+	OP_HALT, // HALT       Stop execution
+	OP_DBG,  // DBG        Print state information
+	OP_PRNT, // PRNT a     Print content of a, formatted as a number      
 
 	INSTRUCTION_COUNT,
 };
 
 enum OpcodeFlags
 {
-	OF_NORMAL, // No special behavior
+	OF_NORMAL = 0, // No special behavior
 };
 
 enum AddressingMode

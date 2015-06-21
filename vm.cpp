@@ -1,6 +1,43 @@
 #include "vm.hpp"
 
 #include <cstring>
+#include <cmath>
+
+namespace
+{
+	////////
+	// Stack helper functions
+	////////
+
+	inline vmword* stack_top(VMContext *ctx)
+	{
+		auto sp = ctx->registers[SP];
+		if (sp == -1)
+			sp++;
+		auto stack_base = ctx->memory + ctx->registers[SBP];
+		auto top = stack_base - sp;
+		return top;
+	}
+
+	inline vmword* stack_inc(VMContext *ctx)
+	{
+		// TODO: Check stack boundaries
+		ctx->registers[SP]++;
+		return stack_top(ctx);
+	}
+
+	inline vmword* stack_dec(VMContext *ctx)
+	{
+		// TODO: Check stack boundaries
+		ctx->registers[SP]--;
+		return stack_top(ctx);
+	}
+
+	inline void stack_push(VMContext *ctx, vmword word)
+	{
+		*stack_inc(ctx) = word;
+	}
+}
 
 VMContext* vm_create()
 {
@@ -48,5 +85,12 @@ Instruction vm_fetch_decode(VMContext *ctx)
 
 void vm_execute(VMContext *ctx, const Instruction *instr)
 {
+	switch (instr->opcode)
+	{
+	case OP_NOP:
+		break;
+	case PUSH:
 
+	}
+	ctx->registers[IC]++;
 }

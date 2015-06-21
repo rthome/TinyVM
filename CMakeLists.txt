@@ -4,11 +4,13 @@ cmake_minimum_required(VERSION 3.0)
 set(SRC_LIST
 	main.cpp
 	vm.cpp
-	instruction.cpp)
+	instruction.cpp
+	instruction_support.cpp)
 
 set(HDR_LIST
 	vm.hpp
 	instruction.hpp
+	instruction_support.hpp
 	vmtypes.hpp)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})

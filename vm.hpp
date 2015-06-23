@@ -2,6 +2,7 @@
 
 #include "vmtypes.hpp"
 #include "instruction.hpp"
+#include "instruction_implementation.hpp"
 
 enum Registers
 {
@@ -35,6 +36,7 @@ const size_t VM_MEMORY_SIZE = 16384;
 struct VMContext
 {
 	bool running = true;
+    instr_func instr_table[INSTRUCTION_COUNT];
 
     vmword registers[VM_REGISTER_COUNT];
     vmword memory[VM_MEMORY_SIZE];

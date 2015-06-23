@@ -203,7 +203,6 @@ namespace
 	INSTRUCTION_IMPL(call)
 	{
 		auto a = operand_fetch<0>(ctx, instr);
-		stack_push(ctx, ctx->registers[SP]);
 		stack_push(ctx, ctx->registers[IP]);
 		ctx->registers[IP] = a;
 	}
@@ -211,9 +210,7 @@ namespace
 	INSTRUCTION_IMPL(ret)
 	{
 		auto ip = stack_pop(ctx);
-		auto sp = stack_pop(ctx);
 		ctx->registers[IP] = ip;
-		ctx->registers[SP] = sp;
 	}
 
     INSTRUCTION_IMPL(jmp)

@@ -23,8 +23,8 @@ enum Opcode
 	OP_DEC,  // DEC a        a = a - 1
 	OP_NOT,  // NOT a        Set a to its bitwise complement
 	OP_MOV,  // MOV a b      a = b
-	OP_CALL, // CALL a       Jump to a, but save IP and SP
-	OP_RET,  // RET          Return from CALL, restoring IP and SP
+	OP_CALL, // CALL a       Jump to a, but save IP
+	OP_RET,  // RET          Return from CALL, restoring IP
     OP_JMP,  // JMP a        Jump to a
     OP_JEQ,  // JEQ a b c    Jump to a if b and c are equal
     OP_JNE,  // JNE a b c    Jump to a if b and c are not equal

@@ -5,11 +5,13 @@ set(SRC_LIST
 	main.cpp
 	vm.cpp
 	instruction.cpp
+	instruction_implementation.cpp
 	instruction_support.cpp)
 
 set(HDR_LIST
 	vm.hpp
 	instruction.hpp
+	instruction_implementation.hpp
 	instruction_support.hpp
 	vmtypes.hpp)
 

@@ -213,6 +213,22 @@ void vm_execute(VMContext *ctx, const Instruction *instr)
 		ctx->registers[IP] = a;
 		break;
 	}
+    case OP_JEQ: {
+        auto a = operand_fetch<0>(ctx, instr);
+        auto b = operand_fetch<1>(ctx, instr);
+        auto c = operand_fetch<2>(ctx, instr);
+        if (b == c)
+            operand_assign_at<0>(ctx, instr, a);
+        break;
+    }
+    case OP_JNE: {
+        auto a = operand_fetch<0>(ctx, instr);
+        auto b = operand_fetch<1>(ctx, instr);
+        auto c = operand_fetch<2>(ctx, instr);
+        if (b != c)
+            operand_assign_at<0>(ctx, instr, a);
+        break;
+    }
 
 	default:
 		vm_error(ctx, "Unknown opcode");

@@ -4,6 +4,8 @@
 
 // Instruction Opcodes
 // 32 bit reserved
+// Other restrictions:
+//  - Target addresses for jumps must be instruction-aligned, i.e. 4-word-aligned
 enum Opcode
 {
 	// Legend:
@@ -19,7 +21,9 @@ enum Opcode
 	OP_INC,  // INC a      Increment a
 	OP_DEC,  // DEC a      Decrement a
 	OP_MOV,  // MOV a b    Copy b into a
-	OP_JMP,  // JMP a      Jump to a. Value of a must be 4-word aligned.
+    OP_JMP,  // JMP a      Jump to a
+    OP_JEQ,  // JEQ a b c  Jump to a if b and c are equal
+    OP_JNE,  // JNE a b c  Jump to a if b and c are not equal
 
 	INSTRUCTION_COUNT,
 };

@@ -186,11 +186,35 @@ namespace
         operand_assign_at<0>(ctx, instr, val);
     }
 
+	INSTRUCTION_IMPL(not)
+	{
+		// TODO: operate on signed value here?
+		auto a = operand_fetch<0>(ctx, instr);
+		auto na = ~a;
+		operand_assign_at<0>(ctx, instr, na);
+	}
+
     INSTRUCTION_IMPL(mov)
     {
-        auto a = operand_fetch<1>(ctx, instr);
-        operand_assign_at<0>(ctx, instr, a);
+        auto b = operand_fetch<1>(ctx, instr);
+        operand_assign_at<0>(ctx, instr, b);
     }
+
+	INSTRUCTION_IMPL(call)
+	{
+		auto a = operand_fetch<0>(ctx, instr);
+		stack_push(ctx, ctx->registers[SP]);
+		stack_push(ctx, ctx->registers[IP]);
+		ctx->registers[IP] = a;
+	}
+
+	INSTRUCTION_IMPL(ret)
+	{
+		auto ip = stack_pop(ctx);
+		auto sp = stack_pop(ctx);
+		ctx->registers[IP] = ip;
+		ctx->registers[SP] = sp;
+	}
 
     INSTRUCTION_IMPL(jmp)
     {
@@ -204,7 +228,7 @@ namespace
         auto b = operand_fetch<1>(ctx, instr);
         auto c = operand_fetch<2>(ctx, instr);
         if (b == c)
-            operand_assign_at<0>(ctx, instr, a);
+			ctx->registers[IP] = a;
     }
 
     INSTRUCTION_IMPL(jne)
@@ -213,8 +237,16 @@ namespace
         auto b = operand_fetch<1>(ctx, instr);
         auto c = operand_fetch<2>(ctx, instr);
         if (b != c)
-            operand_assign_at<0>(ctx, instr, a);
+			ctx->registers[IP] = a;
     }
+
+	INSTRUCTION_IMPL(jnz)
+	{
+		auto a = operand_fetch<0>(ctx, instr);
+		auto b = operand_fetch<1>(ctx, instr);
+		if (b != 0)
+			ctx->registers[IP] = a;
+	}
 }
 
 void prepare_instruction_table(instr_func *buffer)
@@ -227,10 +259,14 @@ void prepare_instruction_table(instr_func *buffer)
 	buffer[OP_SUB] = &IMPL_NAME(sub);
 	buffer[OP_MUL] = &IMPL_NAME(mul);
 	buffer[OP_DIV] = &IMPL_NAME(div);
+	buffer[OP_NOT] = &IMPL_NAME(not);
     buffer[OP_INC] = &IMPL_NAME(inc);
     buffer[OP_DEC] = &IMPL_NAME(dec);
     buffer[OP_MOV] = &IMPL_NAME(mov);
+	buffer[OP_CALL] = &IMPL_NAME(call);
+	buffer[OP_RET] = &IMPL_NAME(ret);
     buffer[OP_JMP] = &IMPL_NAME(jmp);
     buffer[OP_JEQ] = &IMPL_NAME(jeq);
-    buffer[OP_JNE] = &IMPL_NAME(jne);
+	buffer[OP_JNE] = &IMPL_NAME(jne);
+	buffer[OP_JNZ] = &IMPL_NAME(jnz);
 }

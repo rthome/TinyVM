@@ -21,10 +21,14 @@ enum Opcode
 	OP_DIV,  // DIV a b c    a = b / c, remainder is placed in RMD register
 	OP_INC,  // INC a        a = a + 1
 	OP_DEC,  // DEC a        a = a - 1
+	OP_NOT,  // NOT a        Set a to its bitwise complement
 	OP_MOV,  // MOV a b      a = b
+	OP_CALL, // CALL a       Jump to a, but save IP and SP
+	OP_RET,  // RET          Return from CALL, restoring IP and SP
     OP_JMP,  // JMP a        Jump to a
     OP_JEQ,  // JEQ a b c    Jump to a if b and c are equal
     OP_JNE,  // JNE a b c    Jump to a if b and c are not equal
+	OP_JNZ,  // JNZ a b      Jump to a if b is not zero
 
 	INSTRUCTION_COUNT,
 };

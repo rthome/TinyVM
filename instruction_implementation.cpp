@@ -162,10 +162,10 @@ namespace
 	INSTRUCTION_IMPL(div)
 	{
 		// TODO: operate on signed value here?
-		auto a = operand_fetch<1>(ctx, instr);
-		auto b = operand_fetch<2>(ctx, instr);
-		auto val = a / b;
-		auto rem = a % b;
+		auto b = operand_fetch<1>(ctx, instr);
+		auto c = operand_fetch<2>(ctx, instr);
+		auto val = b / c;
+		auto rem = b % c;
 		operand_assign_at<0>(ctx, instr, val);
 		ctx->registers[RMD] = rem;
 	}

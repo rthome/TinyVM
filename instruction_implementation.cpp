@@ -125,11 +125,6 @@ namespace
         ctx->running = false;
     }
 
-    INSTRUCTION_IMPL(prnt)
-    {
-
-    }
-
     INSTRUCTION_IMPL(push)
     {
         auto op = operand_fetch<0>(ctx, instr);
@@ -203,7 +198,6 @@ void prepare_instruction_table(instr_func *buffer)
     buffer[OP_NOP] = &IMPL_NAME(nop);
     buffer[OP_DBG] = &IMPL_NAME(dbg);
     buffer[OP_HALT] = &IMPL_NAME(halt);
-    buffer[OP_PRNT] = &IMPL_NAME(prnt);
     buffer[OP_PUSH] = &IMPL_NAME(push);
     buffer[OP_POP] = &IMPL_NAME(pop);
     buffer[OP_ADD] = &IMPL_NAME(add);

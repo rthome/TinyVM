@@ -11,17 +11,20 @@ enum Opcode
 	// Legend:
 	//   a, b, c - operands (interpret as "value of")
 
-	OP_NOP,  // NOP        Do nothing (still increment ic)
-	OP_HALT, // HALT       Stop execution     
-	OP_PUSH, // PUSH a     Push a onto the stack
-	OP_POP,  // POP a      Pop the top of the stack into a
-	OP_ADD,  // ADD a b c  Add b and c and put the result into a
-	OP_INC,  // INC a      Increment a
-	OP_DEC,  // DEC a      Decrement a
-	OP_MOV,  // MOV a b    Copy b into a
-    OP_JMP,  // JMP a      Jump to a
-    OP_JEQ,  // JEQ a b c  Jump to a if b and c are equal
-    OP_JNE,  // JNE a b c  Jump to a if b and c are not equal
+	OP_NOP,  // NOP          Do nothing (still increment ic)
+	OP_HALT, // HALT         Stop execution     
+	OP_PUSH, // PUSH a       Push a onto the stack
+	OP_POP,  // POP a        Pop the top of the stack into a
+	OP_ADD,  // ADD a b c    a = b + c
+	OP_SUB,  // SUB a b c    a = b - c
+	OP_MUL,  // MUL a b c    a = b * c
+	OP_DIV,  // DIV a b c    a = b / c, remainder is placed in RMD register
+	OP_INC,  // INC a        a = a + 1
+	OP_DEC,  // DEC a        a = a - 1
+	OP_MOV,  // MOV a b      a = b
+    OP_JMP,  // JMP a        Jump to a
+    OP_JEQ,  // JEQ a b c    Jump to a if b and c are equal
+    OP_JNE,  // JNE a b c    Jump to a if b and c are not equal
 
 	INSTRUCTION_COUNT,
 };

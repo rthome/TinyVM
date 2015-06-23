@@ -141,6 +141,35 @@ namespace
         operand_assign_at<0>(ctx, instr, val);
     }
 
+	INSTRUCTION_IMPL(sub)
+	{
+		// TODO: operate on signed value here?
+		auto a = operand_fetch<1>(ctx, instr);
+		auto b = operand_fetch<2>(ctx, instr);
+		auto val = a - b;
+		operand_assign_at<0>(ctx, instr, val);
+	}
+
+	INSTRUCTION_IMPL(mul)
+	{
+		// TODO: operate on signed value here?
+		auto a = operand_fetch<1>(ctx, instr);
+		auto b = operand_fetch<2>(ctx, instr);
+		auto val = a * b;
+		operand_assign_at<0>(ctx, instr, val);
+	}
+
+	INSTRUCTION_IMPL(div)
+	{
+		// TODO: operate on signed value here?
+		auto a = operand_fetch<1>(ctx, instr);
+		auto b = operand_fetch<2>(ctx, instr);
+		auto val = a / b;
+		auto rem = a % b;
+		operand_assign_at<0>(ctx, instr, val);
+		ctx->registers[RMD] = rem;
+	}
+
     INSTRUCTION_IMPL(inc)
     {
         // TODO: operate on signed value here?
@@ -195,6 +224,9 @@ void prepare_instruction_table(instr_func *buffer)
     buffer[OP_PUSH] = &IMPL_NAME(push);
     buffer[OP_POP] = &IMPL_NAME(pop);
     buffer[OP_ADD] = &IMPL_NAME(add);
+	buffer[OP_SUB] = &IMPL_NAME(sub);
+	buffer[OP_MUL] = &IMPL_NAME(mul);
+	buffer[OP_DIV] = &IMPL_NAME(div);
     buffer[OP_INC] = &IMPL_NAME(inc);
     buffer[OP_DEC] = &IMPL_NAME(dec);
     buffer[OP_MOV] = &IMPL_NAME(mov);

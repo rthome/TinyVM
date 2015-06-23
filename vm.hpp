@@ -23,10 +23,13 @@ enum Registers
     R14,
     R15,
 
+	// Special Registers
 	IP, // Instruction pointer
     IC, // Instruction counter
 	SP, // Stack pointer
 	SBP, // Stack base pointer
+
+	RMD, // Remainder register, contains remainder after OP_DIV
 
     VM_REGISTER_COUNT,
 };

@@ -115,11 +115,6 @@ namespace
 
     }
 
-    INSTRUCTION_IMPL(dbg)
-    {
-
-    }
-
     INSTRUCTION_IMPL(halt)
     {
         ctx->running = false;
@@ -196,7 +191,6 @@ namespace
 void prepare_instruction_table(instr_func *buffer)
 {
     buffer[OP_NOP] = &IMPL_NAME(nop);
-    buffer[OP_DBG] = &IMPL_NAME(dbg);
     buffer[OP_HALT] = &IMPL_NAME(halt);
     buffer[OP_PUSH] = &IMPL_NAME(push);
     buffer[OP_POP] = &IMPL_NAME(pop);

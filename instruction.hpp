@@ -12,7 +12,6 @@ enum Opcode
 	//   a, b, c - operands (interpret as "value of")
 
 	OP_NOP,  // NOP        Do nothing (still increment ic)
-	OP_DBG,  // DBG        Print state information
 	OP_HALT, // HALT       Stop execution     
 	OP_PUSH, // PUSH a     Push a onto the stack
 	OP_POP,  // POP a      Pop the top of the stack into a

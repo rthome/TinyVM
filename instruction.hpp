@@ -18,8 +18,9 @@ enum Opcode
 	OP_ADD,  // ADD a b c    a = b + c
 	OP_SUB,  // SUB a b c    a = b - c
 	OP_MUL,  // MUL a b c    a = b * c
-	OP_DIV,  // DIV a b c    a = b / c, remainder is placed in RMD register
-	OP_INC,  // INC a        a = a + 1
+    OP_DIV,  // DIV a b c    a = b / c, remainder is placed in RMD register
+    OP_MOD,  // MOD a b c    a = b mod c
+    OP_INC,  // INC a        a = a + 1
 	OP_DEC,  // DEC a        a = a - 1
 	OP_NOT,  // NOT a        Set a to its bitwise complement
 	OP_MOV,  // MOV a b      a = b

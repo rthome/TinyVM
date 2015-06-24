@@ -177,6 +177,14 @@ namespace
 		ctx->registers[RMD] = rem;
 	}
 
+    INSTRUCTION_IMPL(mod)
+    {
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
+        auto rem = b % c;
+        operand_assign_at<O_A>(ctx, instr, rem);
+    }
+
     INSTRUCTION_IMPL(inc)
     {
         // TODO: operate on signed value here?
@@ -262,7 +270,8 @@ void prepare_instruction_table(instr_func *buffer)
     buffer[OP_ADD] = &IMPL_NAME(add);
 	buffer[OP_SUB] = &IMPL_NAME(sub);
 	buffer[OP_MUL] = &IMPL_NAME(mul);
-	buffer[OP_DIV] = &IMPL_NAME(div);
+    buffer[OP_DIV] = &IMPL_NAME(div);
+    buffer[OP_MOD] = &IMPL_NAME(mod);
 	buffer[OP_NOT] = &IMPL_NAME(not);
     buffer[OP_INC] = &IMPL_NAME(inc);
     buffer[OP_DEC] = &IMPL_NAME(dec);

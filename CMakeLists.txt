@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 set(SRC_LIST
 	main.cpp
 	vm.cpp
+	assembler.cpp
 	instruction.cpp
 	instruction_implementation.cpp
 	instruction_support.cpp)
@@ -11,6 +12,7 @@ set(SRC_LIST
 set(HDR_LIST
 	vm.hpp
 	instruction.hpp
+	assembler.hpp
 	instruction_implementation.hpp
 	instruction_support.hpp
 	vmtypes.hpp)

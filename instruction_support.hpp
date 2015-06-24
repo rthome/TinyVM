@@ -3,7 +3,7 @@
 #include "instruction.hpp"
 
 // Forward-declare VMContext
-class VMContext;
+struct VMContext;
 
 // Load a memory image (VM_MEMORY_SIZE vmwords) from a memory location or a file
 // Exactly VM_MEMORY_SIZE * sizeof(vmword) bytes will be read

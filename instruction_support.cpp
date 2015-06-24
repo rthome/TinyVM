@@ -1,6 +1,40 @@
 #include "instruction_support.hpp"
 
 #include <cstring>
+#include <cstdio>
+
+#include "vm.hpp"
+
+void vmi_load_memory_image(const void *data, VMContext *ctx)
+{
+    memcpy(ctx->memory, data, sizeof(ctx->memory));
+}
+
+bool vmi_load_memory_image_file(const char *filename, VMContext *ctx)
+{
+    auto fp = fopen(filename, "r");
+    if (fp == nullptr)
+        return false;
+    auto read = fread(ctx->memory, sizeof(vmword), VM_MEMORY_SIZE, fp);
+    fclose(fp);
+    if (read == VM_MEMORY_SIZE)
+        return true;
+    else
+        return false;
+}
+
+bool vmi_save_memory_image_file(const char *filename, const VMContext *ctx)
+{
+    auto fp = fopen(filename, "w");
+    if (fp == nullptr)
+        return false;
+    auto written = fwrite(ctx->memory, sizeof(vmword), VM_MEMORY_SIZE, fp);
+    fclose(fp);
+    if (written == VM_MEMORY_SIZE)
+        return true;
+    else
+        return false;
+}
 
 // Make a nullary instruction
 Instruction vmi_make_instr_0(Opcode opcode, OpcodeFlags flags)

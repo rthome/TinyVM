@@ -57,8 +57,15 @@ namespace
     // Operand helper functions
     ////////
 
+    enum OperandIndex
+    {
+        O_A = 0,
+        O_B = 1,
+        O_C = 2,
+    };
+
     // Assign value to location operand at Index position points to. Does not support literal operands.
-    template<size_t Index>
+    template<OperandIndex Index>
     void operand_assign_at(VMContext *ctx, const Instruction *instr, vmword value)
     {
         static_assert(Index < 3, "Operand index must be less than 3.");
@@ -82,7 +89,7 @@ namespace
     }
 
     // Fetch operand value at Index position, following indirections
-    template<size_t Index>
+    template<OperandIndex Index>
     vmword operand_fetch(const VMContext *ctx, const Instruction *instr)
     {
         static_assert(Index < 3, "Operand index must be less than 3.");
@@ -122,87 +129,87 @@ namespace
 
     INSTRUCTION_IMPL(push)
     {
-        auto op = operand_fetch<0>(ctx, instr);
-        stack_push(ctx, op);
+        auto a = operand_fetch<O_A>(ctx, instr);
+        stack_push(ctx, a);
     }
 
     INSTRUCTION_IMPL(pop)
     {
         auto val = stack_pop(ctx);
-        operand_assign_at<0>(ctx, instr, val);
+        operand_assign_at<O_A>(ctx, instr, val);
     }
 
     INSTRUCTION_IMPL(add)
     {
         // TODO: operate on signed value here?
-        auto a = operand_fetch<1>(ctx, instr);
-        auto b = operand_fetch<2>(ctx, instr);
-        auto val = a + b;
-        operand_assign_at<0>(ctx, instr, val);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
+        auto val = b + c;
+        operand_assign_at<O_A>(ctx, instr, val);
     }
 
 	INSTRUCTION_IMPL(sub)
 	{
 		// TODO: operate on signed value here?
-		auto a = operand_fetch<1>(ctx, instr);
-		auto b = operand_fetch<2>(ctx, instr);
-		auto val = a - b;
-		operand_assign_at<0>(ctx, instr, val);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
+        auto val = b - c;
+        operand_assign_at<O_A>(ctx, instr, val);
 	}
 
 	INSTRUCTION_IMPL(mul)
 	{
 		// TODO: operate on signed value here?
-		auto a = operand_fetch<1>(ctx, instr);
-		auto b = operand_fetch<2>(ctx, instr);
-		auto val = a * b;
-		operand_assign_at<0>(ctx, instr, val);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
+        auto val = b * c;
+        operand_assign_at<O_A>(ctx, instr, val);
 	}
 
 	INSTRUCTION_IMPL(div)
 	{
 		// TODO: operate on signed value here?
-		auto b = operand_fetch<1>(ctx, instr);
-		auto c = operand_fetch<2>(ctx, instr);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
 		auto val = b / c;
 		auto rem = b % c;
-		operand_assign_at<0>(ctx, instr, val);
+        operand_assign_at<O_A>(ctx, instr, val);
 		ctx->registers[RMD] = rem;
 	}
 
     INSTRUCTION_IMPL(inc)
     {
         // TODO: operate on signed value here?
-        auto a = operand_fetch<0>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
         auto val = a + 1;
-        operand_assign_at<0>(ctx, instr, val);
+        operand_assign_at<O_A>(ctx, instr, val);
     }
 
     INSTRUCTION_IMPL(dec)
     {
         // TODO: operate on signed value here?
-        auto a = operand_fetch<0>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
         auto val = a - 1;
-        operand_assign_at<0>(ctx, instr, val);
+        operand_assign_at<O_A>(ctx, instr, val);
     }
 
 	INSTRUCTION_IMPL(not)
 	{
 		// TODO: operate on signed value here?
-		auto a = operand_fetch<0>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
 		auto na = ~a;
-		operand_assign_at<0>(ctx, instr, na);
+        operand_assign_at<O_A>(ctx, instr, na);
 	}
 
     INSTRUCTION_IMPL(mov)
     {
-        auto b = operand_fetch<1>(ctx, instr);
-        operand_assign_at<0>(ctx, instr, b);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        operand_assign_at<O_A>(ctx, instr, b);
     }
 
 	INSTRUCTION_IMPL(call)
 	{
-		auto a = operand_fetch<0>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
 		stack_push(ctx, ctx->registers[IP]);
 		ctx->registers[IP] = a;
 	}
@@ -215,32 +222,32 @@ namespace
 
     INSTRUCTION_IMPL(jmp)
     {
-        auto a = operand_fetch<0>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
         ctx->registers[IP] = a;
     }
 
     INSTRUCTION_IMPL(jeq)
     {
-        auto a = operand_fetch<0>(ctx, instr);
-        auto b = operand_fetch<1>(ctx, instr);
-        auto c = operand_fetch<2>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
         if (b == c)
 			ctx->registers[IP] = a;
     }
 
     INSTRUCTION_IMPL(jne)
     {
-        auto a = operand_fetch<0>(ctx, instr);
-        auto b = operand_fetch<1>(ctx, instr);
-        auto c = operand_fetch<2>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
+        auto b = operand_fetch<O_B>(ctx, instr);
+        auto c = operand_fetch<O_C>(ctx, instr);
         if (b != c)
 			ctx->registers[IP] = a;
     }
 
 	INSTRUCTION_IMPL(jnz)
 	{
-		auto a = operand_fetch<0>(ctx, instr);
-		auto b = operand_fetch<1>(ctx, instr);
+        auto a = operand_fetch<O_A>(ctx, instr);
+        auto b = operand_fetch<O_B>(ctx, instr);
 		if (b != 0)
 			ctx->registers[IP] = a;
 	}

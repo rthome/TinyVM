@@ -19,10 +19,13 @@ enum Opcode
 	OP_SUB,  // SUB a b c    a = b - c
 	OP_MUL,  // MUL a b c    a = b * c
     OP_DIV,  // DIV a b c    a = b / c, remainder is placed in RMD register
+	OP_SHL,  // SHL a b c    a = b << c
+	OP_SHR,  // SHR a b c    a = b >> c
     OP_MOD,  // MOD a b c    a = b mod c
     OP_INC,  // INC a        a = a + 1
 	OP_DEC,  // DEC a        a = a - 1
 	OP_NOT,  // NOT a        Set a to its bitwise complement
+	OP_CMP,  // CMP a b c    Compare b and c, put result in a (-1 if c is less than b, 0 if equal, 1 if c is greater than b)
 	OP_MOV,  // MOV a b      a = b
 	OP_CALL, // CALL a       Jump to a, but save IP
 	OP_RET,  // RET          Return from CALL, restoring IP

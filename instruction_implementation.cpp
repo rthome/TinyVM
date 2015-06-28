@@ -177,6 +177,22 @@ namespace
 		ctx->registers[RMD] = rem;
 	}
 
+	INSTRUCTION_IMPL(shl)
+	{
+		auto b = operand_fetch<O_B>(ctx, instr);
+		auto c = operand_fetch<O_C>(ctx, instr);
+		auto val = b << c;
+		operand_assign_at<O_A>(ctx, instr, val);
+	}
+
+	INSTRUCTION_IMPL(shr)
+	{
+		auto b = operand_fetch<O_B>(ctx, instr);
+		auto c = operand_fetch<O_C>(ctx, instr);
+		auto val = b >> c;
+		operand_assign_at<O_A>(ctx, instr, val);
+	}
+
     INSTRUCTION_IMPL(mod)
     {
         auto b = operand_fetch<O_B>(ctx, instr);
@@ -207,6 +223,20 @@ namespace
         auto a = operand_fetch<O_A>(ctx, instr);
 		auto na = ~a;
         operand_assign_at<O_A>(ctx, instr, na);
+	}
+
+	INSTRUCTION_IMPL(cmp)
+	{
+		auto b = operand_fetch<O_B>(ctx, instr);
+		auto c = operand_fetch<O_C>(ctx, instr);
+		vmword result;
+		if (c < b)
+			result = (vmword)-1;
+		else if (c > b)
+			result = 1;
+		else
+			result = 0;
+		operand_assign_at<O_A>(ctx, instr, result);
 	}
 
     INSTRUCTION_IMPL(mov)
@@ -270,11 +300,14 @@ void prepare_instruction_table(instr_func *buffer)
     buffer[OP_ADD] = &IMPL_NAME(add);
 	buffer[OP_SUB] = &IMPL_NAME(sub);
 	buffer[OP_MUL] = &IMPL_NAME(mul);
-    buffer[OP_DIV] = &IMPL_NAME(div);
+	buffer[OP_DIV] = &IMPL_NAME(div);
+	buffer[OP_SHL] = &IMPL_NAME(shl);
+	buffer[OP_SHR] = &IMPL_NAME(shr);
     buffer[OP_MOD] = &IMPL_NAME(mod);
 	buffer[OP_NOT] = &IMPL_NAME(not);
     buffer[OP_INC] = &IMPL_NAME(inc);
     buffer[OP_DEC] = &IMPL_NAME(dec);
+	buffer[OP_CMP] = &IMPL_NAME(cmp);
     buffer[OP_MOV] = &IMPL_NAME(mov);
 	buffer[OP_CALL] = &IMPL_NAME(call);
 	buffer[OP_RET] = &IMPL_NAME(ret);

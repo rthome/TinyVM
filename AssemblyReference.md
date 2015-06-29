@@ -5,14 +5,86 @@ This document is the "official" reference manual for the TinyVM execution enviro
 
 1. A general guide to the TinyVM machine.
 2. A reference for the human-readable TinyVM assembly language.
-3. A reference for the instrcuctions that are available in TinyVM.
+3. A reference for the instructions that are available in TinyVM.
+
+Introduction
+------------
+
+TinyVM is a virtual machine written out of curiosity about virtual machines and machine code. it doesn't do anything really new and borrows heavily from other CPU architectures (mostly x86).
+
+The goal is to implement a simple virtual machine with CPU, memory, and some IO capabilities, and a clean and easy-to-use instruction set and assembly language.
+
+TinyVM is implemented in C++ and should run on pretty much any operating system that has a compiler for C++11. There are no dependencies beyond the C and C++ standard libraries.
 
 TinyVM Machine Guide
 --------------------
 
-TBD
+This section introduces the TinyVm machine and the resources available to programs that run on it.
 
 ### Overview ###
+
+The TinyVM machine implements a von Neumann-architecture, so data and code sit in the same memory space.
+
+Memory consists of 2^14 (16384) 64-bit words, or 131072 bytes. Memory addressing is word by word, indexed from 0 to 16383.
+
+There is a machine-supported stack, usually occupying the first 2048 words of memory. This can be controlled with the SBP (stack base pointer) register. The stack grows downwards in memory, towards address 0, to prevent stack overflows from running wild over data and code in memory.
+
+The machine has a number of registers, of which most can be used for general calculations, while some have special semantics. These are covered in the next section, "Registers".
+
+### Registers ###
+
+The TinyVm virtual machine has a total of 21 registers, all of which are 64 bits wide.
+
+General purpose registers r0 through r15 are available for programs to use as they see fit.
+
+There are also 6 special-purpose registers, each of which serves a well-defined role within the machine:
+
+- rIP, the instruction pointer. 
+
+	Always contains the address of the next instruction to be executed. Will be incremented by the execution engine and modified by various instructions (jump, for example).
+- rIC, the instruction counter.
+
+	Holds the number of instructions executed over the entire runtime of the machine. Will be incremented by 1 after each instruction is executed.
+- rSP, the stack pointer.
+
+	Holds the current size of the stack. Value is relative to rSBP. (Note that the stack grows towards 0 in memory, so to obtain the absolute address of the top of the stack, subtract rSP from rSBP.)
+- rSBP, the stack base pointer.
+
+	Holds the absolute address of the base of the stack. Defaults to 2048, but can be set to any value to set a custom maximum stack size. (An existing stack must be copied to adjust to the new base address, obviously.)
+- rRMD, the remainder register.
+
+	Holds the remainder after a DIV instruction has been executed.
+
+### Instruction Encoding ###
+
+This section documents the encoding and format of TinyVM instructions. For information about the individual instructions, refer to the Instruction Reference section. For information about the human-readable assembly representation, refer to the Assembly Syntax and Features section.
+
+#### General
+
+TinyVM uses a three-address code for most instructions, where the first operand is the target location for the result of the instruction. There is no accumulator register as a common target location for instruction results. This reduces the shuffling-around of data a lot.
+
+All instructions in TinyVm are fixed in length, with one control word and three operand words. This gives a total instruction length of 4 * 64 = 256 bit. Some instructions have less than 3 operands, but the simplicity of a fixed-length instruction format is deemed more important than the potential memory savings.
+
+#### In-Memory Encoding
+
+In memory, instructions are made up of 4 consecutive words in memory. The first word is the control word, while the other 3 words are operands to the instruction.
+
+The control word contains the instruction opcode (32bit), instruction flags (8bit), and 3 addressing modes (1 for each operand, 8bit each).
+
+The opcode takes up bits 64-33 of the control word. The instruction flags take up bits 32-25. The addressing modes take up bits 24-17 (for operand 1), 16-9 (for operand 2), and 8-1 (for operand 3), respectively.
+
+A control word:
+
+	64                               32       24       16       8        0
+	+--------------------------------+--------+--------+--------+--------+
+	|                                |        |        |        |        |
+	|            Opcode              | Flags  |  AM 1  |  AM 2  |  AM 3  |
+	|                                |        |        |        |        |
+	+--------------------------------+--------+--------+--------+--------+
+
+#### Addressing Modes
+
+TBD
 
 Assembly Syntax and Features
 ----------------------------
@@ -21,6 +93,13 @@ TBD
 
 Instruction Reference
 ---------------------
+
+This section documents each instruction available inside TinyVM. Instructions are grouped into rough categories:
+
+1. Machine Support - anything that doesn't really fit into any other category.
+2. Arithmetic - anything that calculates with numbers.
+3. Logic - anything that deals with comparisons or bit operations.
+4. Flow control - jumps and subroutine support.
 
 Note: Effective operand values are referred to as A, B, and C for operands 1, 2, and 3, respectively.
 
@@ -61,6 +140,17 @@ Applicable flags: None
 Operand count: 1  
 
 1. Target location for the popped value. Must not be a literal.
+
+#### MOV (Move)
+
+Move B into A. (A = B)
+
+Opcode: 15  
+Applicable flags: None  
+Operand count: 2  
+
+1. Target location for the result of the operation. Must not be a literal.
+2. The value to move.
 
 ### Arithmetic ###
 
@@ -198,17 +288,6 @@ Operand count: 3
 3. The second value.
 
 ### Flow Control ###
-
-#### MOV (Move)
-
-Move B into A. (A = B)
-
-Opcode: 15  
-Applicable flags: None  
-Operand count: 2  
-
-1. Target location for the result of the operation. Must not be a literal.
-2. The value to move.
 
 #### CALL
 

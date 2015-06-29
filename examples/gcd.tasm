@@ -1,0 +1,15 @@
+base 3000
+	jmp main
+
+gcd:
+	mov r2 r1
+	mod r1 r0 r1
+	mov r0 r2
+	jnz gcd r1
+	ret
+
+main:
+	mov r0 #1071
+	mov r1 #462
+	call gcd
+	halt

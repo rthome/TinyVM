@@ -29,7 +29,7 @@ void load_example(VMContext *ctx)
         // R0 = R2
         vmi_encode_instr_2(OP_MOV, OF_NORMAL, AM_REGISTER, R0, AM_REGISTER, R2),
         // continue while R1 != 0
-        vmi_encode_instr_3(OP_JNZ, OF_NORMAL, AM_LITERAL, 1036, AM_REGISTER, R1, AM_LITERAL, 0),
+        vmi_encode_instr_2(OP_JNZ, OF_NORMAL, AM_LITERAL, 1036, AM_REGISTER, R1),
         // return
         vmi_encode_instr_0(OP_RET),
 

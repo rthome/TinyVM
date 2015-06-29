@@ -32,9 +32,9 @@
 #     The label can be substituted for any memory address (direct or indirect addressing),
 #     and will reference the address of the next instruction after the label
 #
-#   base specifier
+#   .base specifier
 #     A specifier of the form
-#       base X
+#       .base X
 #     where X is a memory address, can be used to set the absolute address in memory
 #     where the following instructions will be assembled in memory.
 #     If no base is given, instructions are assembled starting from word 3000

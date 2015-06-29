@@ -1,4 +1,8 @@
-base 3000
+; Calculate GCD with Euclid's Algorithm
+; Inputs in r0 and r1
+; Output in r0
+
+.base 3000
 	jmp main
 
 gcd:

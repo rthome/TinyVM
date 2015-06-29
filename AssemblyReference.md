@@ -84,7 +84,37 @@ A control word:
 
 #### Addressing Modes
 
-TBD
+Operand values in encoded instructions will be interpreted differently in TinyVM, depending on the Addressing Mode for the operand. There are a total of 6 Addressing Modes available which will influence instruction execution.
+
+There are 2 locations that operands can refer to, memory addresses and register indices, and a special indirect addressing flag. Operands can also be marked as literal values.
+
+1. Literal values.
+
+	Interpret the operand as a literal value instead of as an address.
+2. Memory Address
+
+	Interpret the operand as a memory address that contains the operand value.
+3. Register Index
+
+	Interpret the operand as a register index that contains the operand value.
+
+For each instruction, there must be exactly one addressing mode bit set.
+
+If indirect addressing is enabled, the value of the operand is interpreted as the address in memory that contains the actual operand value. This allows for a more compact expression of programs. Indirect addressing can be used together with all 3 Addressing Modes.
+
+Addressing Modes are encoded as bitfields, with the following values:
+
+1: Indirect addressing  
+2: Literal value  
+4: Memory addressing  
+8: Register addressing  
+
+Examples:
+
+	2 = Literal
+	3 = Literal | Indirect
+	9 = Register | Indirect
+	6 = Literal | Memory (Illegal!)
 
 Assembly Syntax and Features
 ----------------------------

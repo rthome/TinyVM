@@ -49,9 +49,9 @@ void load_example(VMContext *ctx)
 
 int main(int argc, char **argv)
 {
-    if (true)
+    if (argc >= 2)
     {
-        FileMapping file("/home/rmt/Dokumente/Projekte/TinyVM/examples/gcd.tasm");
+        FileMapping file(argv[1]);
         if (!file)
             return -1;
         Scanner scanner(file.begin(), file.end());

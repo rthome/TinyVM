@@ -119,7 +119,37 @@ Examples:
 Assembly Syntax and Features
 ----------------------------
 
-TBD
+### Grammar
+
+This section defines the syntax of the TinyVM  assembly language using a formal grammar in EBNF notation.
+
+	Line            = (SpecifierLine | InstructionLine), [ Comment ] ;
+	SpecifierLine   = Specifier, [ SpecifierOperand ] ;
+	InstructionLine = [ Label ], [ Identifier, [ Operand ], [ Operand ], [Operand] ] ;
+
+	Specifier        = ".", Identifier ;
+	SpecifierOperand = Number ;
+	Label            = Identifier, ":" ;
+	
+	Operand         = DirectOperand | IndirectOperand ;
+	IndirectOperand = "[", DirectOperand, "]" ;
+	DirectOperand   = RegisterOperand | AddressOperand | LiteralOperand ;
+	RegisterOperand = "r", Number | "rIP" | "rIC" | "rSP" | "rSBP" | "rRMD" ;
+	AddressOperand  = Number ;
+	LiteralOperand  = "#", Number ;
+	
+	Number     = DecNumber | HexNumber ;
+	Identifier = Character, { Character } ;
+	
+	HexNumber  = "h", NNHexDigit, { HexDigit } | "h0" ;
+	HexDigit   = "0" | NNHexDigit ;
+	NNHexDigit = NNDigit | "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b" | "d" | "d" | "e" | "f" ;
+	
+	DecNumber = NonNullDigit, { Digit } | "0" ;
+	Digit     = "0" | NNDigit ;
+	NNDigit   = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+	
+	Character = "A" | ... | "Z" | "a" | ... | "z" ;
 
 Instruction Reference
 ---------------------

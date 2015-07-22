@@ -135,9 +135,10 @@ This section defines the syntax of the TinyVM  assembly language using a formal 
 	Operand         = DirectOperand | IndirectOperand ;
 	IndirectOperand = "[", DirectOperand, "]" ;
 	DirectOperand   = RegisterOperand | AddressOperand | LiteralOperand ;
-	RegisterOperand = "r", Number | "rIP" | "rIC" | "rSP" | "rSBP" | "rRMD" ;
+	RegisterOperand = "r", DecNumber | "rIP" | "rIC" | "rSP" | "rSBP" | "rRMD" ;
 	AddressOperand  = Number ;
 	LiteralOperand  = "#", Number ;
+	LabelOperand    = Identifier ;
 	
 	Number     = DecNumber | HexNumber ;
 	Identifier = Character, { Character } ;

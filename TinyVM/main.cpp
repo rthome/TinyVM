@@ -1,6 +1,10 @@
 #include "vm.hpp"
 #include "instruction_support.hpp"
 
+#include "assembler_details.hpp"
+
+#include <iostream>
+
 void run_vm_context(VMContext *ctx)
 {
     ctx->running = true;
@@ -43,17 +47,36 @@ void load_example(VMContext *ctx)
     vm_load_program(ctx, program, 10);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	auto ctx = vm_create();
-    vm_init_stack(ctx, 1024);
-    vm_init_programbase(ctx, 1032);
+    if (true)
+    {
+        FileMapping file("/home/rmt/Dokumente/Projekte/TinyVM/examples/gcd.tasm");
+        if (!file)
+            return -1;
+        Scanner scanner(file.begin(), file.end());
 
-    load_example(ctx);
+        Token token;
+        while (token.type != T_EOF)
+        {
+            token = scanner.read();
+            std::cout << token.type << " [" << token.line << ":" << token.column << "]";
+            if (token.value.size() > 0)
+                std::cout << " (" << token.value << ")";
+            std::cout << std::endl;
+        }
+    }
+    else
+    {
+        auto ctx = vm_create();
+        vm_init_stack(ctx, 1024);
+        vm_init_programbase(ctx, 1032);
 
-    run_vm_context(ctx);
-    vm_destroy(ctx);
+        load_example(ctx);
 
+        run_vm_context(ctx);
+        vm_destroy(ctx);
+    }
     return 0;
 }
 

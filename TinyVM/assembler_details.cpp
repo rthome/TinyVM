@@ -79,12 +79,15 @@ void Scanner::skipWhitespace() noexcept
     {
         if ('\n' == *m_next)
         {
+            m_column = 0;
             ++m_line;
-            m_column = 1;
+			++m_next;
         }
-
-        if (isspace(*m_next))
-            ++m_next;
+		else if (isspace(*m_next))
+		{
+			++m_column;
+			++m_next;
+		}
         else
             break;
     }

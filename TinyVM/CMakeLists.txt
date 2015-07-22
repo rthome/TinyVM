@@ -5,6 +5,7 @@ set(SRC_LIST
 	main.cpp
 	vm.cpp
 	assembler.cpp
+        assembler_details.cpp
 	instruction.cpp
 	instruction_implementation.cpp
 	instruction_support.cpp)
@@ -13,6 +14,7 @@ set(HDR_LIST
 	vm.hpp
 	instruction.hpp
 	assembler.hpp
+        assembler_details.hpp
 	instruction_implementation.hpp
 	instruction_support.hpp
 	vmtypes.hpp)

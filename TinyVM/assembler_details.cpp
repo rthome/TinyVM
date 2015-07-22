@@ -7,7 +7,7 @@
 
 namespace
 {
-    Token token_reader_helper(TokenType type, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate) noexcept
+    Token token_reader_helper(Token token, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate) noexcept
     {
         std::string content;
         content.push_back(initial);
@@ -22,7 +22,8 @@ namespace
                 break;
         }
 
-        return Token(type, std::move(content));
+        token.value = std::move(content);
+        return token;
     }
 }
 
@@ -76,6 +77,12 @@ void Scanner::skipWhitespace() noexcept
 {
     while (m_next != m_end)
     {
+        if ('\n' == *m_next)
+        {
+            ++m_line;
+            m_column = 1;
+        }
+
         if (isspace(*m_next))
             ++m_next;
         else
@@ -94,28 +101,17 @@ int Scanner::get() noexcept
 {
     if (m_next == m_end)
         return -1;
+    ++m_column;
     return *m_next++;
 }
 
-Token Scanner::readNumber(char initial) noexcept
+Token Scanner::makeToken(TokenType type) const noexcept
 {
-    return token_reader_helper(T_NUMBER, initial,
-                               [&]() { return get(); },
-                               [](int c) { return isdigit(c); });
-}
-
-Token Scanner::readString(char initial) noexcept
-{
-    return token_reader_helper(T_STRING, initial,
-                               [&]() { return get(); },
-                               [](int c) { return isalnum(c); });
-}
-
-Token Scanner::readComment(char initial) noexcept
-{
-    return token_reader_helper(T_COMMENT, initial,
-                               [&]() { return get(); },
-                               [](int c) { return (c != '\r' && c != '\n'); });
+    Token token;
+    token.type = type;
+    token.line = m_line;
+    token.column = m_column;
+    return token;
 }
 
 Token Scanner::read() noexcept
@@ -124,22 +120,28 @@ Token Scanner::read() noexcept
 
     auto c = get();
     if (c < 0)
-        return Token(T_EOF);
+        return makeToken(T_EOF);
 
     if ('[' == c)
-        return Token(T_LEFTBRACKET);
+        return makeToken(T_LEFTBRACKET);
     if (']' == c)
-        return Token(T_RIGHTBRACKET);
+        return makeToken(T_RIGHTBRACKET);
     if (':' == c)
-        return Token(T_COLON);
+        return makeToken(T_COLON);
     if ('.' == c)
-        return Token(T_DOT);
+        return makeToken(T_DOT);
     if (';' == c)
-        return readComment(c);
+        return token_reader_helper(makeToken(T_COMMENT), c,
+                                   [&]() { return get(); },
+                                   [](int c) { return (c != '\r' && c != '\n'); });
     if (isdigit(c))
-        return readNumber(static_cast<char>(c));
+        return token_reader_helper(makeToken(T_NUMBER), c,
+                                   [&]() { return get(); },
+                                   [](int c) { return isdigit(c); });
     if (isalpha(c))
-        return readString(static_cast<char>(c));
+        return token_reader_helper(makeToken(T_STRING), c,
+                                   [&]() { return get(); },
+                                   [](int c) { return isalnum(c); });
 
-    return Token(T_INVALID);
+    return makeToken(T_INVALID);
 }

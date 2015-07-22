@@ -21,9 +21,7 @@ struct Token
 {
     TokenType type = T_INVALID;
     std::string value;
-
-    inline Token(TokenType t) : type(t) { }
-    inline Token(TokenType t, std::string&& s) : type(t), value(s) { }
+    unsigned line, column;
 };
 
 class FileMapping
@@ -68,20 +66,28 @@ class Scanner
 {
     const char * const m_end  = nullptr;
     const char *m_next = nullptr;
+    unsigned m_line = 1;
+    unsigned m_column = 1;
 
     int peek() const noexcept;
     int get() noexcept;
 
+    Token makeToken(TokenType type) const noexcept;
+
     void skipWhitespace() noexcept;
-    Token readNumber(char initial) noexcept;
-    Token readString(char initial) noexcept;
+    Token readNumber(Token token) noexcept;
+    Token readString(Token token) noexcept;
     Token readComment(char initial) noexcept;
 
 public:
-    Scanner(Scanner const &) = delete;
-    Scanner & operator=(Scanner const &) = delete;
+    Scanner(const Scanner &) = delete;
+    Scanner & operator=(const Scanner &) = delete;
 
     Scanner(const char * const begin, const char * const end) noexcept;
 
+    // Read the next token
     Token read() noexcept;
+
+    // Get the current line number
+    inline unsigned line() const noexcept { return m_line; }
 };

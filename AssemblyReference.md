@@ -123,13 +123,14 @@ Assembly Syntax and Features
 
 This section defines the syntax of the TinyVM  assembly language using a formal grammar in EBNF notation.
 
-	Line            = (SpecifierLine | InstructionLine), [ Comment ] ;
+	Line            = [ (SpecifierLine | InstructionLine) ], [ Comment ] ;
 	SpecifierLine   = Specifier, [ SpecifierOperand ] ;
 	InstructionLine = [ Label ], [ Identifier, [ Operand ], [ Operand ], [Operand] ] ;
 
 	Specifier        = ".", Identifier ;
 	SpecifierOperand = Number ;
 	Label            = Identifier, ":" ;
+	Comment          = ";", { ? Any character ? }
 	
 	Operand         = DirectOperand | IndirectOperand ;
 	IndirectOperand = "[", DirectOperand, "]" ;

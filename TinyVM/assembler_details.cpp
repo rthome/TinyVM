@@ -7,7 +7,7 @@
 
 namespace
 {
-    Token token_reader_helper(TokenType type, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate)
+    Token token_reader_helper(TokenType type, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate) noexcept
     {
         std::string content;
         content.push_back(initial);

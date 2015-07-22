@@ -7,8 +7,7 @@
 
 namespace
 {
-    template<TokenType TT>
-    Token token_reader_helper(char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate)
+    Token token_reader_helper(TokenType type, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate)
     {
         std::string content;
         content.push_back(initial);
@@ -23,7 +22,7 @@ namespace
                 break;
         }
 
-        return Token(TT, std::move(content));
+        return Token(type, std::move(content));
     }
 }
 
@@ -100,23 +99,23 @@ int Scanner::get() noexcept
 
 Token Scanner::readNumber(char initial) noexcept
 {
-    return token_reader_helper<T_NUMBER>(initial,
-                                         [&]() { return get(); },
-                                         [](int c) { return isdigit(c); });
+    return token_reader_helper(T_NUMBER, initial,
+                               [&]() { return get(); },
+                               [](int c) { return isdigit(c); });
 }
 
 Token Scanner::readString(char initial) noexcept
 {
-    return token_reader_helper<T_STRING>(initial,
-                                         [&]() { return get(); },
-                                         [](int c) { return isalnum(c); });
+    return token_reader_helper(T_STRING, initial,
+                               [&]() { return get(); },
+                               [](int c) { return isalnum(c); });
 }
 
 Token Scanner::readComment(char initial) noexcept
 {
-    return token_reader_helper<T_COMMENT>(initial,
-                                          [&]() { return get(); },
-                                          [](int c) { return (c != '\r' && c != '\n'); });
+    return token_reader_helper(T_COMMENT, initial,
+                               [&]() { return get(); },
+                               [](int c) { return (c != '\r' && c != '\n'); });
 }
 
 Token Scanner::read() noexcept

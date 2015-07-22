@@ -148,3 +148,13 @@ Token Scanner::read() noexcept
 
     return makeToken(T_INVALID);
 }
+
+////////
+// Parser implementation
+////////
+
+Parser::Parser(Scanner & scanner)
+	: m_scanner(scanner)
+{
+
+}

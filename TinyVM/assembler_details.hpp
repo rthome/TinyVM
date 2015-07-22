@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 
+// Token types
 enum TokenType
 {
     T_INVALID,
@@ -17,6 +18,8 @@ enum TokenType
     T_RIGHTBRACKET,
 };
 
+// A single token, emitted by the Scanner
+// Contains the type of token, an optional token text, and location information
 struct Token
 {
     TokenType type = T_INVALID;
@@ -24,6 +27,8 @@ struct Token
     unsigned line, column;
 };
 
+// File mapper - Map a file into memory
+// TODO: OPtimize by using memory-mapped files on windows and unix?
 class FileMapping
 {
     char *m_begin = nullptr;
@@ -62,6 +67,7 @@ public:
     }
 };
 
+// Assembly scanner - Splits a memory range into a stream of tokens
 class Scanner
 {
     const char * const m_end  = nullptr;
@@ -75,9 +81,6 @@ class Scanner
     Token makeToken(TokenType type) const noexcept;
 
     void skipWhitespace() noexcept;
-    Token readNumber(Token token) noexcept;
-    Token readString(Token token) noexcept;
-    Token readComment(char initial) noexcept;
 
 public:
     Scanner(const Scanner &) = delete;
@@ -90,4 +93,14 @@ public:
 
     // Get the current line number
     inline unsigned line() const noexcept { return m_line; }
+};
+
+// Assembly Parser - Process tokens from a scanner
+// Produces a high-level representation of the assembly file, ready for assembly
+class Parser
+{
+	Scanner& m_scanner;
+
+public:
+	Parser(Scanner& scanner);
 };

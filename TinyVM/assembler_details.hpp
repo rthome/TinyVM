@@ -10,6 +10,7 @@ enum TokenType
 
     T_DOT,
     T_COLON,
+    T_COMMENT,
     T_STRING,
     T_NUMBER,
     T_LEFTBRACKET,
@@ -74,6 +75,7 @@ class Scanner
     void skipWhitespace() noexcept;
     Token readNumber(char initial) noexcept;
     Token readString(char initial) noexcept;
+    Token readComment(char initial) noexcept;
 
 public:
     Scanner(Scanner const &) = delete;

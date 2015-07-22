@@ -3,6 +3,29 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cctype>
+#include <functional>
+
+namespace
+{
+    template<TokenType TT>
+    Token token_reader_helper(char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate)
+    {
+        std::string content;
+        content.push_back(initial);
+
+        int c;
+        while (true)
+        {
+            c = get_func();
+            if (c >= 0 && predicate(c))
+                content.push_back(static_cast<char>(c));
+            else
+                break;
+        }
+
+        return Token(TT, std::move(content));
+    }
+}
 
 ////////
 // FileMapping implementation
@@ -77,38 +100,23 @@ int Scanner::get() noexcept
 
 Token Scanner::readNumber(char initial) noexcept
 {
-    std::string content;
-    content.push_back(initial);
-
-    int c;
-    while (true)
-    {
-        c = get();
-        if (c >= 0 && isdigit(c))
-            content.push_back(static_cast<char>(c));
-        else
-            break;
-    }
-
-    return Token(T_STRING, std::move(content));
+    return token_reader_helper<T_NUMBER>(initial,
+                                         [&]() { return get(); },
+                                         [](int c) { return isdigit(c); });
 }
 
 Token Scanner::readString(char initial) noexcept
 {
-    std::string content;
-    content.push_back(initial);
+    return token_reader_helper<T_STRING>(initial,
+                                         [&]() { return get(); },
+                                         [](int c) { return isalnum(c); });
+}
 
-    int c;
-    while (true)
-    {
-        c = get();
-        if (c >= 0 && isalnum(c))
-            content.push_back(static_cast<char>(c));
-        else
-            break;
-    }
-
-    return Token(T_STRING, std::move(content));
+Token Scanner::readComment(char initial) noexcept
+{
+    return token_reader_helper<T_COMMENT>(initial,
+                                          [&]() { return get(); },
+                                          [](int c) { return (c != '\r' && c != '\n'); });
 }
 
 Token Scanner::read() noexcept
@@ -127,6 +135,8 @@ Token Scanner::read() noexcept
         return Token(T_COLON);
     if ('.' == c)
         return Token(T_DOT);
+    if (';' == c)
+        return readComment(c);
     if (isdigit(c))
         return readNumber(static_cast<char>(c));
     if (isalpha(c))

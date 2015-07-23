@@ -3,32 +3,8 @@
 #include <cstddef>
 #include <string>
 
-// Token types
-enum TokenType
-{
-    T_INVALID,
-    T_EOF,
-
-    T_DOT,
-    T_COLON,
-    T_COMMENT,
-    T_STRING,
-    T_NUMBER,
-    T_LEFTBRACKET,
-    T_RIGHTBRACKET,
-};
-
-// A single token, emitted by the Scanner
-// Contains the type of token, an optional token text, and location information
-struct Token
-{
-    TokenType type = T_INVALID;
-    std::string value;
-    unsigned line, column;
-};
-
 // File mapper - Map a file into memory
-// TODO: OPtimize by using memory-mapped files on windows and unix?
+// TODO: Optimize by using memory-mapped files on windows and unix?
 class FileMapping
 {
     char *m_begin = nullptr;
@@ -67,6 +43,34 @@ public:
     }
 };
 
+////////
+// Scanner declarations
+////////
+
+// Token types
+enum TokenType
+{
+    T_INVALID,
+    T_EOF,
+
+    T_DOT,
+    T_COLON,
+    T_COMMENT,
+    T_STRING,
+    T_NUMBER,
+    T_LEFTBRACKET,
+    T_RIGHTBRACKET,
+};
+
+// A single token, emitted by the Scanner
+// Contains the type of token, an optional token text, and location information
+struct Token
+{
+    TokenType type = T_INVALID;
+    std::string value;
+    unsigned line, column;
+};
+
 // Assembly scanner - Splits a memory range into a stream of tokens
 class Scanner
 {
@@ -95,8 +99,27 @@ public:
     inline unsigned line() const noexcept { return m_line; }
 };
 
+////////
+// Parser declarations
+////////
+
+// Different kinds of syntax errors
+enum SyntaxErrorType
+{
+    InvalidToken,
+    RightBracketExpected,
+};
+
+// A syntax error thrown by the Parser
+struct SyntaxError
+{
+    SyntaxErrorType error;
+    std::string message;
+    unsigned line, column;
+};
+
 // Assembly Parser - Process tokens from a scanner
-// Produces a high-level representation of the assembly file, ready for assembly
+// Consumes tokens from a scanner and produces a high-level representation of the file
 class Parser
 {
 	Scanner& m_scanner;

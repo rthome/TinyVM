@@ -2,6 +2,9 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_map>
+
+#include "vm.hpp"
 
 // File mapper - Map a file into memory
 // TODO: Optimize by using memory-mapped files on windows and unix?
@@ -78,6 +81,7 @@ class Scanner
     const char *m_next = nullptr;
     unsigned m_line = 1;
     unsigned m_column = 1;
+    Token m_current;
 
     int peek() const noexcept;
     int get() noexcept;
@@ -85,6 +89,7 @@ class Scanner
     Token makeToken(TokenType type) const noexcept;
 
     void skipWhitespace() noexcept;
+    Token read() noexcept;
 
 public:
     Scanner(const Scanner &) = delete;
@@ -93,24 +98,28 @@ public:
     Scanner(const char * const begin, const char * const end) noexcept;
 
     // Read the next token
-    Token read() noexcept;
+    Token readNextToken() noexcept;
+
+    inline Token currentToken() const noexcept { return m_current; }
 
     // Get the current line number
     inline unsigned line() const noexcept { return m_line; }
 };
 
 ////////
-// Parser declarations
+// Assembler declarations
 ////////
 
 // Different kinds of syntax errors
 enum SyntaxErrorType
 {
-    InvalidToken,
-    RightBracketExpected,
+    SE_NOERROR,
+
+    SE_INVALIDTOKEN,
+    SE_RIGHTBRACKETEXPECTED,
 };
 
-// A syntax error thrown by the Parser
+// A syntax error thrown by the Assembler
 struct SyntaxError
 {
     SyntaxErrorType error;
@@ -118,12 +127,31 @@ struct SyntaxError
     unsigned line, column;
 };
 
-// Assembly Parser - Process tokens from a scanner
-// Consumes tokens from a scanner and produces a high-level representation of the file
+// Opaque struct for parsing results
+struct ParseBuffer;
+
+// Parser - Parse tokens into a high-level representation
 class Parser
 {
-	Scanner& m_scanner;
+    Scanner *m_scanner;
 
 public:
-	Parser(Scanner& scanner);
+    // Parse a stream of tokens from a scanner - can throw SyntaxErrors
+    ParseBuffer* parse(Scanner *scanner);
+};
+
+// Assembler - Turn the parsed representation of the file into
+class Assembler
+{
+    // Maps labels to memory locations
+    std::unordered_map<std::string, vmword> m_labelMap;
+
+    // The current memory address, set by .base specifier
+    vmword m_address;
+
+    VMContext *m_context;
+
+public:
+    // Take a ParseBuffer and assemble it into a vm context
+    bool assemble(ParseBuffer *buffer, VMContext *context) noexcept;
 };

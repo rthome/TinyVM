@@ -4,28 +4,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <functional>
-
-namespace
-{
-    Token token_reader_helper(Token token, char initial, std::function<int(void)> get_func, std::function<bool(int)> predicate) noexcept
-    {
-        std::string content;
-        content.push_back(initial);
-
-        int c;
-        while (true)
-        {
-            c = get_func();
-            if (c >= 0 && predicate(c))
-                content.push_back(static_cast<char>(c));
-            else
-                break;
-        }
-
-        token.value = std::move(content);
-        return token;
-    }
-}
+#include <vector>
 
 ////////
 // FileMapping implementation
@@ -66,31 +45,35 @@ FileMapping::~FileMapping() noexcept
 // Scanner Implementation
 ///////
 
+namespace
+{
+    Token token_reader_helper(Token token, char initial,
+                              std::function<int(void)> get_func,
+                              std::function<bool(int)> predicate) noexcept
+    {
+        std::string content;
+        content.push_back(initial);
+
+        int c;
+        while (true)
+        {
+            c = get_func();
+            if (c >= 0 && predicate(c))
+                content.push_back(static_cast<char>(c));
+            else
+                break;
+        }
+
+        token.value = std::move(content);
+        return token;
+    }
+}
+
 Scanner::Scanner(const char * const begin, const char * const end) noexcept
     : m_end(end),
       m_next(begin)
 {
 
-}
-
-void Scanner::skipWhitespace() noexcept
-{
-    while (m_next != m_end)
-    {
-        if ('\n' == *m_next)
-        {
-            m_column = 0;
-            ++m_line;
-			++m_next;
-        }
-		else if (isspace(*m_next))
-		{
-			++m_column;
-			++m_next;
-		}
-        else
-            break;
-    }
 }
 
 int Scanner::peek() const noexcept
@@ -115,6 +98,26 @@ Token Scanner::makeToken(TokenType type) const noexcept
     token.line = m_line;
     token.column = m_column;
     return token;
+}
+
+void Scanner::skipWhitespace() noexcept
+{
+    while (m_next != m_end)
+    {
+        if ('\n' == *m_next)
+        {
+            m_column = 0;
+            ++m_line;
+            ++m_next;
+        }
+        else if (isspace(*m_next))
+        {
+            ++m_column;
+            ++m_next;
+        }
+        else
+            break;
+    }
 }
 
 Token Scanner::read() noexcept
@@ -149,12 +152,170 @@ Token Scanner::read() noexcept
     return makeToken(T_INVALID);
 }
 
+Token Scanner::readNextToken() noexcept
+{
+    auto token = this->read();
+    m_current = token;
+    return token;
+}
+
 ////////
-// Parser implementation
+// Parser/Assembler implementation
 ////////
 
-Parser::Parser(Scanner & scanner)
-	: m_scanner(scanner)
+// High-level assembly language representation structures
+// For Parser output
+namespace
+{
+    enum OperandType
+    {
+        OT_REGISTER, // Standard types
+        OT_ADDRESS,
+        OT_LITERAL,
+        OT_LABEL, // Referencing a label for its address value
+    };
+
+    enum SpecifierType
+    {
+        ST_BASE,
+    };
+
+    enum EntityType
+    {
+        ET_INSTRUCTION,
+        ET_LABEL,
+        ET_SPECIFIER,
+    };
+
+    // Operand for an instruction
+    struct Operand
+    {
+        OperandType type;
+        bool indirect;
+        union value
+        {
+            Registers reg;
+            vmword addr;
+            vmword literal;
+            std::string label;
+        };
+    };
+
+    struct ParseEntity
+    {
+
+    };
+
+    // An instruction
+    struct InstructionEntity : public ParseEntity
+    {
+        std::string name;
+        size_t operand_count;
+        Operand operands[3];
+    };
+
+    // A label
+    struct LabelEntity : public ParseEntity
+    {
+        std::string name;
+    };
+
+    // A special specifier
+    struct SpecifierEntity : public ParseEntity
+    {
+        SpecifierType type;
+        vmword operand;
+    };
+
+    struct ParseBufferEntry
+    {
+        EntityType type;
+        ParseEntity *entity;
+    };
+
+    inline ParseBufferEntry makeEntry(EntityType type, ParseEntity *entity)
+    {
+        ParseBufferEntry entry;
+        entry.type = type;
+        entry.entity = entity;
+        return entry;
+    }
+}
+
+struct ParseBuffer
+{
+    std::vector<ParseBufferEntry> entries;
+};
+
+bool parse_label(Scanner *scanner, LabelEntity *dst)
+{
+
+}
+
+bool parse_instruction(Scanner *scanner, InstructionEntity *dst)
+{
+
+}
+
+bool parse_specifier(Scanner *scanner, SpecifierEntity *dst)
+{
+
+}
+
+ParseBuffer* Parser::parse(Scanner *scanner)
+{
+    // Allocate a parse buffer
+    auto buffer = new ParseBuffer;
+
+    // Read the first token
+    auto token = scanner->readNextToken();
+
+    // TODO: This will not really work out well.
+    // Need to parse more tokens at once or allow
+    // backing out after discovering that an
+    // alternative parse does not work out.
+    // -> Implement some sort of buffered token stream
+
+    while(scanner->currentToken().type != T_EOF)
+    {
+        SpecifierEntity specifier;
+        if (parse_specifier(scanner, &specifier))
+        {
+            buffer->entries.push_back(makeEntry(ET_SPECIFIER, new SpecifierEntity(specifier)));
+            continue;
+        }
+
+        LabelEntity label;
+        if (parse_label(scanner, &label))
+        {
+            buffer->entries.push_back(makeEntry(ET_LABEL, new LabelEntity(label)));
+            continue;
+        }
+
+        InstructionEntity instruction;
+        if (parse_instruction(scanner, &instruction))
+        {
+            buffer->entries.push_back(makeEntry(ET_INSTRUCTION, new InstructionEntity(instruction)));
+            continue;
+        }
+
+        SyntaxError error;
+        error.error = SE_INVALIDTOKEN;
+        error.message = "Expected a specifier, instruction, or label.";
+        error.line = token.line;
+        error.column = token.column;
+        throw error;
+
+        token = scanner->readNextToken();
+    }
+
+    return buffer;
+}
+
+////////
+////////
+
+bool Assembler::assemble(ParseBuffer *buffer, VMContext *context) noexcept
 {
 
 }

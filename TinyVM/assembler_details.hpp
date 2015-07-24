@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 #include <unordered_map>
+#include <stack>
+#include <vector>
 
 #include "vm.hpp"
 
@@ -107,7 +109,26 @@ public:
 };
 
 ////////
-// Assembler declarations
+// A buffered token stream with checkpointing
+////////
+
+class BufferedTokenStream
+{
+    Scanner& m_scanner;
+    std::stack<size_t> m_checkpointStack;
+    std::vector<Token> m_tokenBuffer;
+
+public:
+    BufferedTokenStream(Scanner& scanner) noexcept;
+
+    void checkpoint() noexcept;
+    void restore() noexcept;
+
+    Token nextToken() noexcept;
+};
+
+////////
+// Assembler & Parser declarations
 ////////
 
 // Different kinds of syntax errors

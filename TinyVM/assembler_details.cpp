@@ -160,6 +160,31 @@ Token Scanner::readNextToken() noexcept
 }
 
 ////////
+// BufferedTokenStream implementation
+////////
+
+BufferedTokenStream::BufferedTokenStream(Scanner &scanner) noexcept
+    : m_scanner(scanner)
+{
+
+}
+
+void BufferedTokenStream::checkpoint() noexcept
+{
+
+}
+
+void BufferedTokenStream::restore() noexcept
+{
+
+}
+
+Token BufferedTokenStream::nextToken() noexcept
+{
+
+}
+
+////////
 // Parser/Assembler implementation
 ////////
 

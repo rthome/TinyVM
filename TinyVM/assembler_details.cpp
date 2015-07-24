@@ -315,13 +315,7 @@ ParseBuffer* Parser::parse(BufferedTokenStream &stream)
     auto buffer = new ParseBuffer;
 
     // Read the first token
-	auto token = m_tokenStream.nextToken();
-
-    // TODO: This will not really work out well.
-    // Need to parse more tokens at once or allow
-    // backing out after discovering that an
-    // alternative parse does not work out.
-    // -> Implement some sort of buffered token stream
+	m_tokenStream.nextToken();
 
     while(stream.currentToken().type != T_EOF)
     {
@@ -349,11 +343,11 @@ ParseBuffer* Parser::parse(BufferedTokenStream &stream)
         SyntaxError error;
         error.error = SE_INVALIDTOKEN;
         error.message = "Expected a specifier, instruction, or label.";
-        error.line = token.line;
-        error.column = token.column;
+        error.line = stream.currentToken().line;
+        error.column = stream.currentToken().column;
         throw error;
 
-		token = stream.nextToken();
+		stream.nextToken();
     }
 
     return buffer;

@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <stack>
-#include <vector>
+#include <deque>
 
 #include "vm.hpp"
 
@@ -83,7 +83,6 @@ class Scanner
     const char *m_next = nullptr;
     unsigned m_line = 1;
     unsigned m_column = 1;
-    Token m_current;
 
     int peek() const noexcept;
     int get() noexcept;
@@ -102,8 +101,6 @@ public:
     // Read the next token
     Token readNextToken() noexcept;
 
-    inline Token currentToken() const noexcept { return m_current; }
-
     // Get the current line number
     inline unsigned line() const noexcept { return m_line; }
 };
@@ -116,14 +113,18 @@ class BufferedTokenStream
 {
     Scanner& m_scanner;
     std::stack<size_t> m_checkpointStack;
-    std::vector<Token> m_tokenBuffer;
+    std::deque<Token> m_tokenBuffer;
+
+	bool m_replaying = false;
+	size_t m_replayIndex = 0;
 
 public:
     BufferedTokenStream(Scanner& scanner) noexcept;
 
     void checkpoint() noexcept;
-    void restore() noexcept;
+    bool rewind() noexcept;
 
+	Token currentToken() const noexcept;
     Token nextToken() noexcept;
 };
 
@@ -154,11 +155,11 @@ struct ParseBuffer;
 // Parser - Parse tokens into a high-level representation
 class Parser
 {
-    Scanner *m_scanner;
+	BufferedTokenStream &m_tokenStream;
 
 public:
     // Parse a stream of tokens from a scanner - can throw SyntaxErrors
-    ParseBuffer* parse(Scanner *scanner);
+    ParseBuffer* parse(BufferedTokenStream &stream);
 };
 
 // Assembler - Turn the parsed representation of the file into

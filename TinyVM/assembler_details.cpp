@@ -155,7 +155,6 @@ Token Scanner::read() noexcept
 Token Scanner::readNextToken() noexcept
 {
     auto token = this->read();
-    m_current = token;
     return token;
 }
 
@@ -171,17 +170,40 @@ BufferedTokenStream::BufferedTokenStream(Scanner &scanner) noexcept
 
 void BufferedTokenStream::checkpoint() noexcept
 {
-
+	m_checkpointStack.push(m_tokenBuffer.size());
 }
 
-void BufferedTokenStream::restore() noexcept
+bool BufferedTokenStream::rewind() noexcept
 {
+	if (m_checkpointStack.empty())
+		return false;
 
+	m_replayIndex = m_checkpointStack.top();
+	m_replaying = true;
+	m_checkpointStack.pop();
+	return true;
+}
+
+Token BufferedTokenStream::currentToken() const noexcept
+{
+	if (m_tokenBuffer.empty())
+		return Token();
+	return m_tokenBuffer.back();
 }
 
 Token BufferedTokenStream::nextToken() noexcept
 {
+	if (m_replaying)
+	{
+		if (m_replayIndex < m_tokenBuffer.size())
+			return m_tokenBuffer[m_replayIndex++];
+		else
+			m_replaying = false;
+	}
 
+	Token newToken = m_scanner.readNextToken();
+	m_tokenBuffer.push_back(newToken);
+	return newToken;
 }
 
 ////////
@@ -272,28 +294,28 @@ struct ParseBuffer
     std::vector<ParseBufferEntry> entries;
 };
 
-bool parse_label(Scanner *scanner, LabelEntity *dst)
+bool parse_label(BufferedTokenStream &stream, LabelEntity &dst)
 {
-
+	return false;
 }
 
-bool parse_instruction(Scanner *scanner, InstructionEntity *dst)
+bool parse_instruction(BufferedTokenStream &stream, InstructionEntity &dst)
 {
-
+	return false;
 }
 
-bool parse_specifier(Scanner *scanner, SpecifierEntity *dst)
+bool parse_specifier(BufferedTokenStream &stream, SpecifierEntity &dst)
 {
-
+	return false;
 }
 
-ParseBuffer* Parser::parse(Scanner *scanner)
+ParseBuffer* Parser::parse(BufferedTokenStream &stream)
 {
     // Allocate a parse buffer
     auto buffer = new ParseBuffer;
 
     // Read the first token
-    auto token = scanner->readNextToken();
+	auto token = m_tokenStream.nextToken();
 
     // TODO: This will not really work out well.
     // Need to parse more tokens at once or allow
@@ -301,24 +323,24 @@ ParseBuffer* Parser::parse(Scanner *scanner)
     // alternative parse does not work out.
     // -> Implement some sort of buffered token stream
 
-    while(scanner->currentToken().type != T_EOF)
+    while(stream.currentToken().type != T_EOF)
     {
         SpecifierEntity specifier;
-        if (parse_specifier(scanner, &specifier))
+        if (parse_specifier(stream, specifier))
         {
             buffer->entries.push_back(makeEntry(ET_SPECIFIER, new SpecifierEntity(specifier)));
             continue;
         }
 
         LabelEntity label;
-        if (parse_label(scanner, &label))
+        if (parse_label(stream, label))
         {
             buffer->entries.push_back(makeEntry(ET_LABEL, new LabelEntity(label)));
             continue;
         }
 
         InstructionEntity instruction;
-        if (parse_instruction(scanner, &instruction))
+        if (parse_instruction(stream, instruction))
         {
             buffer->entries.push_back(makeEntry(ET_INSTRUCTION, new InstructionEntity(instruction)));
             continue;
@@ -331,7 +353,7 @@ ParseBuffer* Parser::parse(Scanner *scanner)
         error.column = token.column;
         throw error;
 
-        token = scanner->readNextToken();
+		token = stream.nextToken();
     }
 
     return buffer;
@@ -342,5 +364,5 @@ ParseBuffer* Parser::parse(Scanner *scanner)
 
 bool Assembler::assemble(ParseBuffer *buffer, VMContext *context) noexcept
 {
-
+	return false;
 }

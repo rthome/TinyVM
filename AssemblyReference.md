@@ -147,7 +147,7 @@ This section defines the syntax of the TinyVM  assembly language using a formal 
 	HexDigit   = "0" | NNHexDigit ;
 	NNHexDigit = NNDigit | "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b" | "d" | "d" | "e" | "f" ;
 	
-	DecNumber = NonNullDigit, { Digit } | "0" ;
+	DecNumber = NNDigit, { Digit } | "0" ;
 	Digit     = "0" | NNDigit ;
 	NNDigit   = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 	

@@ -1,0 +1,16 @@
+#pragma once
+
+/*
+ * CMAKE GENERATED FILE
+ * Changes outside of config.h.in will be discarded
+ * the next time cmake runs.
+ */
+
+#define TVM_VERSION "@TVM_VERSION_MAJOR@.@TVM_VERSION_MINOR@.@TVM_VERSION_REV@"
+#define TVM_VERSION_MAJOR @TVM_VERSION_MAJOR@
+#define TVM_VERSION_MINOR @TVM_VERSION_MINOR@
+#define TVM_VERSION_REV @TVM_VERSION_REV@
+
+// Configuration settings
+#cmakedefine ENABLE_WIN32_FILEMAPPING_MMAP
+#cmakedefine ENABLE_POSIX_FILEMAPPING_MMAP

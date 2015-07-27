@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <stack>
 #include <deque>
+#include <memory>
 
 #include "vm.hpp"
 
@@ -67,13 +68,19 @@ enum TokenType
     T_RIGHTBRACKET,
 };
 
+struct ScanPosition
+{
+    unsigned line;
+    unsigned line_offset;
+};
+
 // A single token, emitted by the Scanner
 // Contains the type of token, an optional token text, and location information
 struct Token
 {
     TokenType type = T_INVALID;
     std::string value;
-    unsigned line, column;
+    ScanPosition pos;
 };
 
 // Assembly scanner - Splits a memory range into a stream of tokens
@@ -146,7 +153,7 @@ struct SyntaxError
 {
     SyntaxErrorType error;
     std::string message;
-    unsigned line, column;
+    Token token;
 };
 
 // Opaque struct for parsing results
@@ -159,7 +166,7 @@ class Parser
 
 public:
     // Parse a stream of tokens from a scanner - can throw SyntaxErrors
-    ParseBuffer* parse(BufferedTokenStream &stream);
+    std::unique_ptr<ParseBuffer> parse(BufferedTokenStream &stream);
 };
 
 // Assembler - Turn the parsed representation of the file into

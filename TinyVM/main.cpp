@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         while (token.type != T_EOF)
         {
             token = scanner.readNextToken();
-            std::cout << token.type << " [" << token.line << ":" << token.column << "]";
+            std::cout << token.type << " [" << token.pos.line << ":" << token.pos.line_offset << "]";
             if (token.value.size() > 0)
                 std::cout << " (" << token.value << ")";
             std::cout << std::endl;

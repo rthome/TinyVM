@@ -95,8 +95,8 @@ Token Scanner::makeToken(TokenType type) const noexcept
 {
     Token token;
     token.type = type;
-    token.line = m_line;
-    token.column = m_column;
+    token.pos.line = m_line;
+    token.pos.line_offset = m_column;
     return token;
 }
 
@@ -248,13 +248,10 @@ namespace
         };
     };
 
-    struct ParseEntity
-    {
-
-    };
+    struct Entity { };
 
     // An instruction
-    struct InstructionEntity : public ParseEntity
+    struct InstructionEntity : Entity
     {
         std::string name;
         size_t operand_count;
@@ -262,13 +259,13 @@ namespace
     };
 
     // A label
-    struct LabelEntity : public ParseEntity
+    struct LabelEntity : Entity
     {
         std::string name;
     };
 
     // A special specifier
-    struct SpecifierEntity : public ParseEntity
+    struct SpecifierEntity : Entity
     {
         SpecifierType type;
         vmword operand;
@@ -277,80 +274,90 @@ namespace
     struct ParseBufferEntry
     {
         EntityType type;
-        ParseEntity *entity;
+        std::shared_ptr<Entity> entity_ptr;
     };
 
-    inline ParseBufferEntry makeEntry(EntityType type, ParseEntity *entity)
+    inline ParseBufferEntry makeEntry(EntityType type, std::shared_ptr<Entity> entity)
     {
         ParseBufferEntry entry;
         entry.type = type;
-        entry.entity = entity;
+        entry.entity_ptr = entity;
         return entry;
     }
 }
 
 struct ParseBuffer
 {
-    std::vector<ParseBufferEntry> entries;
+    size_t entry_count;
+    std::unique_ptr<ParseBufferEntry[]> entries;
 };
 
-bool parse_label(BufferedTokenStream &stream, LabelEntity &dst)
+// Parser functions
+namespace
 {
-	return false;
+    std::shared_ptr<LabelEntity> parse_label(BufferedTokenStream &stream)
+    {
+        return std::shared_ptr<LabelEntity>(nullptr);
+    }
+
+    std::shared_ptr<InstructionEntity> parse_instruction(BufferedTokenStream &stream)
+    {
+        return std::shared_ptr<InstructionEntity>(nullptr);
+    }
+
+    std::shared_ptr<SpecifierEntity> parse_specifier(BufferedTokenStream &stream)
+    {
+        return std::shared_ptr<SpecifierEntity>(nullptr);
+    }
+
+    // helper function to call parser functions
+    template<typename Entity>
+    std::shared_ptr<Entity> call_parser_for(BufferedTokenStream &stream, std::function<std::shared_ptr<Entity>(BufferedTokenStream&)> parser_f)
+    {
+        stream.checkpoint();
+        auto entity_ptr = parser_f(stream);
+        if (entity_ptr)
+            return entity_ptr;
+        else
+        {
+            stream.rewind();
+            return std::shared_ptr<Entity>(nullptr);
+        }
+    }
 }
 
-bool parse_instruction(BufferedTokenStream &stream, InstructionEntity &dst)
+std::unique_ptr<ParseBuffer> Parser::parse(BufferedTokenStream &stream)
 {
-	return false;
-}
-
-bool parse_specifier(BufferedTokenStream &stream, SpecifierEntity &dst)
-{
-	return false;
-}
-
-ParseBuffer* Parser::parse(BufferedTokenStream &stream)
-{
-    // Allocate a parse buffer
-    auto buffer = new ParseBuffer;
+    // Temporary storage for buffer entries
+    std::vector<ParseBufferEntry> entry_vector;
 
     // Read the first token
 	m_tokenStream.nextToken();
 
     while(stream.currentToken().type != T_EOF)
     {
-        SpecifierEntity specifier;
-        if (parse_specifier(stream, specifier))
+        auto specifier_ptr = call_parser_for<SpecifierEntity>(stream, parse_specifier);
+        if (specifier_ptr)
         {
-            buffer->entries.push_back(makeEntry(ET_SPECIFIER, new SpecifierEntity(specifier)));
-            continue;
-        }
-
-        LabelEntity label;
-        if (parse_label(stream, label))
-        {
-            buffer->entries.push_back(makeEntry(ET_LABEL, new LabelEntity(label)));
-            continue;
-        }
-
-        InstructionEntity instruction;
-        if (parse_instruction(stream, instruction))
-        {
-            buffer->entries.push_back(makeEntry(ET_INSTRUCTION, new InstructionEntity(instruction)));
+            entry_vector.push_back(makeEntry(ET_SPECIFIER, specifier_ptr));
             continue;
         }
 
         SyntaxError error;
         error.error = SE_INVALIDTOKEN;
         error.message = "Expected a specifier, instruction, or label.";
-        error.line = stream.currentToken().line;
-        error.column = stream.currentToken().column;
+        error.token = stream.currentToken();
         throw error;
 
 		stream.nextToken();
     }
 
-    return buffer;
+    auto pbuffer = std::make_unique<ParseBuffer>();
+    pbuffer->entry_count = entry_vector.size();
+    pbuffer->entries = std::make_unique<ParseBufferEntry[]>(entry_vector.size());
+    for (size_t i = 0; i < entry_vector.size(); i++)
+        pbuffer->entries[i] = entry_vector[i];
+    return pbuffer;
 }
 
 ////////

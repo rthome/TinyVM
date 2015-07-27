@@ -5,9 +5,34 @@
 #ifdef ENABLE_WIN32_FILEMAPPING_MMAP
 // Win32 mmap implementation
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
+FileMapping::FileMapping(const char *filename) noexcept
+{
+
+}
+
+FileMapping::~FileMapping() noexcept
+{
+
+}
+
 #else
 #ifdef ENABLE_POSIX_FILEMAPPING_MMAP
 // POSIX mmap implementation
+
+#include <sys/mman.h>
+
+FileMapping::FileMapping(const char *filename) noexcept
+{
+
+}
+
+FileMapping::~FileMapping() noexcept
+{
+
+}
 
 #else
 // Fallback implementation

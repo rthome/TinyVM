@@ -1,5 +1,17 @@
 #include "assembler_details.hpp"
 
+#include "config.hpp"
+
+#ifdef ENABLE_WIN32_FILEMAPPING_MMAP
+// Win32 mmap implementation
+
+#else
+#ifdef ENABLE_POSIX_FILEMAPPING_MMAP
+// POSIX mmap implementation
+
+#else
+// Fallback implementation
+
 #include <cstdlib>
 #include <cstddef>
 
@@ -33,3 +45,7 @@ FileMapping::~FileMapping() noexcept
 {
 	free(m_begin);
 }
+
+
+#endif // ENABLE_POSIX_FILEMAPPING_MMAP
+#endif // ENABLE_WIN32_FILEMAPPING_MMAP

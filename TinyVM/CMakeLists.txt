@@ -39,6 +39,7 @@ set(HDR_LIST
 	instruction_support.hpp
 	vmtypes.hpp)
 
+include_directories("${PROJECT_BINARY_DIR}")
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)

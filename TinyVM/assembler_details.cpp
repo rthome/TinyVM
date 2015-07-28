@@ -5,7 +5,9 @@
 #include <vector>
 #include <ostream>
 
+////////
 // Token stringification
+////////
 
 namespace
 {
@@ -31,7 +33,9 @@ std::ostream& operator<<(std::ostream& stream, TokenType token)
         return (stream << TOKEN_NAMES[(size_t)token]);
 }
 
+////////
 // Scanner implementation
+////////
 
 namespace
 {
@@ -75,16 +79,15 @@ int Scanner::get() noexcept
 {
     if (m_next == m_end)
         return -1;
-    ++m_column;
-    return *m_next++;
+    m_textpos.line_offset++;
+    return *(m_next++);
 }
 
 Token Scanner::makeToken(TokenType type) const noexcept
 {
     Token token;
     token.type = type;
-    token.pos.line = m_line;
-    token.pos.line_offset = m_column;
+    token.pos = m_textpos;
     return token;
 }
 
@@ -112,8 +115,8 @@ Token Scanner::read() noexcept
 
     if ('\r' == c || '\n' == c)
     {
-        m_column = 0;
-        ++m_line;
+        m_textpos.line_offset = 0;
+        m_textpos.line++;
 
         int n = peek();
         if ('\r' == n || '\n' == n)
@@ -147,58 +150,10 @@ Token Scanner::read() noexcept
     return makeToken(T_INVALID);
 }
 
-Token Scanner::readNextToken() noexcept
+Token Scanner::getNext() noexcept
 {
     auto token = this->read();
     return token;
-}
-
-////////
-// BufferedTokenStream implementation
-////////
-
-BufferedTokenStream::BufferedTokenStream(Scanner &scanner) noexcept
-    : m_scanner(scanner)
-{
-
-}
-
-void BufferedTokenStream::checkpoint() noexcept
-{
-	m_checkpointStack.push(m_tokenBuffer.size());
-}
-
-bool BufferedTokenStream::rewind() noexcept
-{
-	if (m_checkpointStack.empty())
-		return false;
-
-	m_replayIndex = m_checkpointStack.top();
-	m_replaying = true;
-	m_checkpointStack.pop();
-	return true;
-}
-
-Token BufferedTokenStream::currentToken() const noexcept
-{
-	if (m_tokenBuffer.empty())
-		return Token();
-	return m_tokenBuffer.back();
-}
-
-Token BufferedTokenStream::nextToken() noexcept
-{
-	if (m_replaying)
-	{
-		if (m_replayIndex < m_tokenBuffer.size())
-			return m_tokenBuffer[m_replayIndex++];
-		else
-			m_replaying = false;
-	}
-
-	Token newToken = m_scanner.readNextToken();
-	m_tokenBuffer.push_back(newToken);
-	return newToken;
 }
 
 ////////
@@ -327,9 +282,9 @@ std::unique_ptr<ParseBuffer> Parser::parse(BufferedTokenStream &stream)
     std::vector<ParseBufferEntry> entry_vector;
 
     // Read the first token
-	m_tokenStream.nextToken();
+    m_tokenStream.next();
 
-    while(stream.currentToken().type != T_EOF)
+    while(stream.current().type != T_EOF)
     {
         auto specifier_ptr = call_parser_for<SpecifierEntity>(stream, parse_specifier);
         if (specifier_ptr)
@@ -341,10 +296,10 @@ std::unique_ptr<ParseBuffer> Parser::parse(BufferedTokenStream &stream)
         SyntaxError error;
         error.error = SE_INVALIDTOKEN;
         error.message = "Expected a specifier, instruction, or label.";
-        error.token = stream.currentToken();
+        error.token = stream.current();
         throw error;
 
-		stream.nextToken();
+        stream.next();
     }
 
     auto pbuffer = std::make_unique<ParseBuffer>();

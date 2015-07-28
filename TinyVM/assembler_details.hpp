@@ -98,8 +98,7 @@ class Scanner
 {
     const char * const m_end  = nullptr;
     const char *m_next = nullptr;
-    unsigned m_line = 1;
-    unsigned m_column = 1;
+    ScanPosition m_textpos;
 
     int peek() const noexcept;
     int get() noexcept;
@@ -115,35 +114,81 @@ public:
 
     Scanner(const char * const begin, const char * const end) noexcept;
 
-    // Read the next token
-    Token readNextToken() noexcept;
+    // Get the next token
+    Token getNext() noexcept;
 
-    // Get the current line number
-    inline unsigned line() const noexcept { return m_line; }
+    // Get the current text position
+    inline ScanPosition pos() const noexcept { return m_textpos; }
 };
 
 ////////
-// A buffered token stream with checkpointing
+// A buffered stream with checkpointing
 ////////
 
-class BufferedTokenStream
+// A checkpointable queue
+//   Element - type of elements in the queue
+//   Source  - type of producer, must have a .readNext() that returns the next Element
+template<typename Element, typename Source>
+class BufferedStream
 {
-    Scanner& m_scanner;
+    Source& m_source;
+
     std::stack<size_t> m_checkpointStack;
-    std::deque<Token> m_tokenBuffer;
+    std::deque<Element> m_buffer;
 
 	bool m_replaying = false;
 	size_t m_replayIndex = 0;
 
 public:
-    BufferedTokenStream(Scanner& scanner) noexcept;
+    BufferedStream(Source& source) noexcept
+        : m_source(source)
+    { }
 
-    void checkpoint() noexcept;
-    bool rewind() noexcept;
+    void checkpoint() noexcept
+    {
+        m_checkpointStack.push(m_buffer.size());
+    }
 
-	Token currentToken() const noexcept;
-    Token nextToken() noexcept;
+    bool rewind() noexcept
+    {
+        if (m_checkpointStack.empty())
+            return false;
+
+        m_replayIndex = m_checkpointStack.top();
+        m_replaying = true;
+        m_checkpointStack.pop();
+        return true;
+    }
+
+    Element current() const noexcept
+    {
+        if (m_buffer.empty())
+            return Element();
+        else
+            if (m_replaying && m_replayIndex < m_buffer.size())
+                return m_buffer[m_replayIndex];
+            else
+                return m_buffer.back();
+    }
+
+    Element next() noexcept
+    {
+        if (m_replaying)
+        {
+            if (m_replayIndex < m_buffer.size())
+                return m_buffer[m_replayIndex++];
+            else
+                m_replaying = false;
+        }
+
+        Element newElement = m_source.getNext();
+        m_buffer.push_back(newElement);
+        return newElement;
+    }
 };
+
+// Specialise for the trivial case of token buffering
+typedef BufferedStream<Token, Scanner> BufferedTokenStream;
 
 ////////
 // Assembler & Parser declarations

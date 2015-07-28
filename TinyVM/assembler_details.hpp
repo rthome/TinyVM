@@ -6,12 +6,12 @@
 #include <stack>
 #include <deque>
 #include <memory>
+#include <array>
+#include <iosfwd>
 
 #include "vm.hpp"
 
-// File mapper
-//   Map a file into memory (read-only)
-//   or, map a memory region
+// File mapper - Map a file into memory (read-only)
 class FileMapping
 {
     void *m_handle = nullptr; // Custom handle for implementations to use
@@ -70,8 +70,14 @@ enum TokenType
     T_LEFTBRACKET,
     T_RIGHTBRACKET,
     T_NEWLINE,
+
+    TOKEN_TYPE_COUNT
 };
 
+// Stringification of token names
+std::ostream& operator<<(std::ostream& stream, TokenType token);
+
+// A position in a text file, with line number and offset into the line
 struct ScanPosition
 {
     unsigned line;

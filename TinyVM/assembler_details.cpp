@@ -3,6 +3,35 @@
 #include <cctype>
 #include <functional>
 #include <vector>
+#include <ostream>
+
+// Token stringification
+
+namespace
+{
+    const std::array<const char *, TOKEN_TYPE_COUNT> TOKEN_NAMES
+    {
+        "T_INVALID",
+        "T_EOF",
+        "T_DOT",
+        "T_COLON",
+        "T_POUND",
+        "T_COMMENT",
+        "T_STRING",
+        "T_NUMBER",
+        "T_LEFTBRACKET",
+        "T_RIGHTBRACKET",
+        "T_NEWLINE",
+    };
+}
+
+std::ostream& operator<<(std::ostream& stream, TokenType token)
+{
+    if (token >= 0 && token < TOKEN_TYPE_COUNT)
+        return (stream << TOKEN_NAMES[(size_t)token]);
+}
+
+// Scanner implementation
 
 namespace
 {

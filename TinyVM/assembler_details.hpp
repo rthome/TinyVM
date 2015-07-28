@@ -63,11 +63,13 @@ enum TokenType
 
     T_DOT,
     T_COLON,
+    T_POUND,
     T_COMMENT,
     T_STRING,
     T_NUMBER,
     T_LEFTBRACKET,
     T_RIGHTBRACKET,
+    T_NEWLINE,
 };
 
 struct ScanPosition

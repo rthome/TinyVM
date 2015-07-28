@@ -63,16 +63,10 @@ void Scanner::skipWhitespace() noexcept
 {
     while (m_next != m_end)
     {
-        if ('\n' == *m_next)
+        // pass over space, except newlines - need those
+        if (isspace(*m_next) && '\r' != *m_next && '\n' != *m_next)
         {
-            m_column = 0;
-            ++m_line;
-            ++m_next;
-        }
-        else if (isspace(*m_next))
-        {
-            ++m_column;
-            ++m_next;
+            get();
         }
         else
             break;
@@ -87,6 +81,17 @@ Token Scanner::read() noexcept
     if (c < 0)
         return makeToken(T_EOF);
 
+    if ('\r' == c || '\n' == c)
+    {
+        m_column = 0;
+        ++m_line;
+
+        int n = peek();
+        if ('\r' == n || '\n' == n)
+            get();
+        return makeToken(T_NEWLINE);
+    }
+
     if ('[' == c)
         return makeToken(T_LEFTBRACKET);
     if (']' == c)
@@ -95,6 +100,8 @@ Token Scanner::read() noexcept
         return makeToken(T_COLON);
     if ('.' == c)
         return makeToken(T_DOT);
+    if ('#' == c)
+        return makeToken(T_POUND);
     if (';' == c)
         return token_reader_helper(makeToken(T_COMMENT), c,
                                    [&]() { return get(); },

@@ -10,12 +10,32 @@
 
 FileMapping::FileMapping(const char *filename) noexcept
 {
+    HANDLE file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+        return;
 
+    HANDLE mapped = CreateFileMapping(file, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (mapped == INVALID_HANDLE_VALUE)
+        return;
+    m_handle = (void*)mapped;
+
+    LPVOID mapped_view = MapViewOfFile(mapped, FILE_MAP_READ, 0, 0, 0);
+    if (mapped_view != NULL)
+    {
+        LARGE_INTEGER file_size = { 0 };
+        GetFileSizeEx(file, &file_size);
+        m_begin = static_cast<char*>(mapped_view);
+        m_end = m_begin + (size_t)file_size.QuadPart;
+    }
+
+    CloseHandle(file);
 }
 
 FileMapping::~FileMapping() noexcept
 {
-
+    HANDLE mapped = (HANDLE)m_handle;
+    UnmapViewOfFile(m_begin);
+    CloseHandle(mapped);
 }
 
 #else

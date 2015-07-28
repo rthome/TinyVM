@@ -9,12 +9,14 @@
 
 #include "vm.hpp"
 
-// File mapper - Map a file into memory
+// File mapper
+//   Map a file into memory (read-only)
+//   or, map a memory region
 class FileMapping
 {
-    uint64_t m_handle = 0; // Custom handle for implementations to use
-    char *m_begin = nullptr; // Starting address of the mapping
-    char *m_end = nullptr; // End address of the mapping (last readable address)
+    void *m_handle = nullptr; // Custom handle for implementations to use
+    char *m_begin  = nullptr; // Starting address of the mapping
+    char *m_end    = nullptr; // End address of the mapping (last readable address)
 
 public:
     // Disable copying
@@ -25,7 +27,7 @@ public:
     FileMapping(FileMapping&&) = default;
     FileMapping& operator=(FileMapping&&) = default;
 
-    explicit FileMapping(const char *filename) noexcept;
+    explicit FileMapping(const char *filename) noexcept; // Maps a file
     ~FileMapping() noexcept;
 
     inline explicit operator bool() const noexcept

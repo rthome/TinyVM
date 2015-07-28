@@ -10,11 +10,11 @@
 #include "vm.hpp"
 
 // File mapper - Map a file into memory
-// TODO: Optimize by using memory-mapped files on windows and unix?
 class FileMapping
 {
-    char *m_begin = nullptr;
-    char *m_end = nullptr;
+    uint64_t m_handle = 0; // Custom handle for implementations to use
+    char *m_begin = nullptr; // Starting address of the mapping
+    char *m_end = nullptr; // End address of the mapping (last readable address)
 
 public:
     // Disable copying

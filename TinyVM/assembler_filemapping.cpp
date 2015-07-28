@@ -22,16 +22,37 @@ FileMapping::~FileMapping() noexcept
 #ifdef ENABLE_POSIX_FILEMAPPING_MMAP
 // POSIX mmap implementation
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 
 FileMapping::FileMapping(const char *filename) noexcept
 {
+    m_handle = open(filename, O_RDONLY);
+    if (m_handle == (uint64_t)-1)
+        return;
 
+    struct stat sbuf;
+    if (fstat((int)m_handle, &sbuf) == -1)
+        return;
+
+    auto mapped = mmap(nullptr, sbuf.st_size, PROT_READ, MAP_PRIVATE, m_handle, 0);
+    if (mapped != MAP_FAILED)
+    {
+        m_begin = static_cast<char*>(mapped);
+        m_end = m_begin + sbuf.st_size;
+    }
+
+    close(m_handle);
+    m_handle = 0;
 }
 
 FileMapping::~FileMapping() noexcept
 {
-
+    if (m_begin != nullptr)
+        munmap(m_begin, m_end - m_begin);
 }
 
 #else

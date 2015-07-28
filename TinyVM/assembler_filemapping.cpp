@@ -50,23 +50,22 @@ FileMapping::~FileMapping() noexcept
 
 FileMapping::FileMapping(const char *filename) noexcept
 {
-    m_handle = open(filename, O_RDONLY);
-    if (m_handle == (uint64_t)-1)
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1)
         return;
 
     struct stat sbuf;
-    if (fstat((int)m_handle, &sbuf) == -1)
+    if (fstat(fd, &sbuf) == -1)
         return;
 
-    auto mapped = mmap(nullptr, sbuf.st_size, PROT_READ, MAP_PRIVATE, m_handle, 0);
+    auto mapped = mmap(nullptr, sbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (mapped != MAP_FAILED)
     {
         m_begin = static_cast<char*>(mapped);
         m_end = m_begin + sbuf.st_size;
     }
 
-    close(m_handle);
-    m_handle = 0;
+    close(fd);
 }
 
 FileMapping::~FileMapping() noexcept

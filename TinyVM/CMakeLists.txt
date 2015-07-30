@@ -31,6 +31,7 @@ set(SRC_LIST
 set(HDR_LIST
 	${TVM_CONFIG_TEMPLATE_PATH}
 	${TVM_CONFIG_HEADER_PATH}
+	util.hpp
 	vm.hpp
 	instruction.hpp
 	assembler.hpp

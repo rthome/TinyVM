@@ -56,15 +56,21 @@ int main(int argc, char **argv)
             return -1;
         Scanner scanner(file.begin(), file.end());
 
-        Token token;
-        while (token.type != T_EOF)
-        {
-            token = scanner.getNext();
-            std::cout << token.type << " [" << token.pos.line << ":" << token.pos.line_offset << "]";
-            if (token.value.size() > 0)
-                std::cout << " (" << token.value << ")";
-            std::cout << std::endl;
-        }
+		while (true)
+		{
+			auto token_line = read_scanner_line(scanner);
+			if (token_line.count == 0)
+				break;
+			for (size_t i = 0; i < token_line.count; i++)
+			{
+				auto token = token_line.tokens[i];
+				std::cout << "[" << token.pos.line << ":" << token.pos.line_offset << "] " << token.type;
+				if (token.value.size() > 0)
+					std::cout << " \'" << token.value << "\'";
+				std::cout << std::endl;
+			}
+			std::cout << std::endl;
+		}
     }
     else
     {

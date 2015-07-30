@@ -3,7 +3,10 @@
 #include <cctype>
 #include <functional>
 #include <vector>
+#include <array>
 #include <ostream>
+
+#include "util.hpp"
 
 ////////
 // Token stringification
@@ -19,7 +22,7 @@ namespace
         "T_COLON",
         "T_POUND",
         "T_COMMENT",
-        "T_STRING",
+        "T_IDENTIFIER",
         "T_NUMBER",
         "T_LEFTBRACKET",
         "T_RIGHTBRACKET",
@@ -30,7 +33,8 @@ namespace
 std::ostream& operator<<(std::ostream& stream, TokenType token)
 {
     if (token >= 0 && token < TOKEN_TYPE_COUNT)
-        return (stream << TOKEN_NAMES[(size_t)token]);
+        stream << TOKEN_NAMES[(size_t)token];
+	return stream;
 }
 
 ////////
@@ -143,7 +147,7 @@ Token Scanner::read() noexcept
                                    [&]() { return get(); },
                                    [](int c) { return isdigit(c); });
     if (isalpha(c))
-        return token_reader_helper(makeToken(T_STRING), c,
+        return token_reader_helper(makeToken(T_IDENTIFIER), c,
                                    [&]() { return get(); },
                                    [](int c) { return isalnum(c); });
 
@@ -157,163 +161,129 @@ Token Scanner::getNext() noexcept
 }
 
 ////////
-// Parser/Assembler implementation
+// Parsing implementation
 ////////
 
-// High-level assembly language representation structures
-// For Parser output
+//
+// TokenBuffer implementation
+//
+
+TokenBuffer::TokenBuffer(size_t c, const Token *token_data)
+	: m_refcnt(new size_t(1)),
+	count(c),
+	tokens(new Token[c])
+{
+	if (token_data != nullptr)
+		for (size_t i = 0; i < count; i++)
+			tokens[i] = token_data[i];
+}
+
+TokenBuffer::TokenBuffer(const TokenBuffer& b)
+	: m_refcnt(b.m_refcnt),
+	count(b.count),
+	tokens(b.tokens)
+{
+	(*m_refcnt)++;
+}
+
+TokenBuffer& TokenBuffer::operator=(const TokenBuffer& b)
+{
+	// To handle self-assignment, don't change to order of these statements
+
+	size_t *old_refcnt = m_refcnt;
+	Token *old_tokens = tokens;
+
+	this->m_refcnt = b.m_refcnt;
+	this->count = b.count;
+	this->tokens = b.tokens;
+	(*m_refcnt)++;
+
+	if (--(*old_refcnt) == 0)
+	{
+		delete old_refcnt;
+		delete[] old_tokens;
+	}
+
+	return *this;
+}
+
+TokenBuffer::~TokenBuffer()
+{
+	if (--(*m_refcnt) == 0)
+	{
+		delete m_refcnt;
+		delete[] tokens;
+	}
+}
+
 namespace
 {
-    enum OperandType
-    {
-        OT_REGISTER, // Standard types
-        OT_ADDRESS,
-        OT_LITERAL,
-        OT_LABEL, // Referencing a label for its address value
-    };
+	//
+	// Private parsing helper functions
+	//
 
-    enum SpecifierType
-    {
-        ST_BASE,
-    };
+	struct ExpectResult
+	{
+		bool ok;
 
-    enum EntityType
-    {
-        ET_INSTRUCTION,
-        ET_LABEL,
-        ET_SPECIFIER,
-    };
+		operator bool() const {	return ok; }
+		ExpectResult(bool r) : ok(r) { }
+	};
 
-    // Operand for an instruction
-    struct Operand
-    {
-        OperandType type;
-        bool indirect;
-        union value
-        {
-            Registers reg;
-            vmword addr;
-            vmword literal;
-            std::string label;
-        };
-    };
+	ExpectResult expect(TokenType type, const Token *token, std::string *dst_data = nullptr)
+	{
+		if (type == token->type)
+		{
+			if (dst_data != nullptr)
+				*dst_data = token->value;
+			return false;
+		}
+		return{ false };
+	}
 
-    struct Entity { };
-
-    // An instruction
-    struct InstructionEntity : Entity
-    {
-        std::string name;
-        size_t operand_count;
-        Operand operands[3];
-    };
-
-    // A label
-    struct LabelEntity : Entity
-    {
-        std::string name;
-    };
-
-    // A special specifier
-    struct SpecifierEntity : Entity
-    {
-        SpecifierType type;
-        vmword operand;
-    };
-
-    struct ParseBufferEntry
-    {
-        EntityType type;
-        std::shared_ptr<Entity> entity_ptr;
-    };
-
-    inline ParseBufferEntry makeEntry(EntityType type, std::shared_ptr<Entity> entity)
-    {
-        ParseBufferEntry entry;
-        entry.type = type;
-        entry.entity_ptr = entity;
-        return entry;
-    }
+	ExpectResult expect_either(size_t count, const TokenType *types, const Token *token, std::string *dst_data = nullptr)
+	{
+		bool match = false;
+		for (size_t i = 0; i < count; i++)
+			if (types[i] == token->type)
+			{
+				match = true;
+				break;
+			}
+		if (match && dst_data != nullptr)
+			*dst_data = token->value;
+		return{ match };
+	}
 }
 
-struct ParseBuffer
+TokenBuffer read_scanner_line(Scanner &scanner)
 {
-    size_t entry_count;
-    std::unique_ptr<ParseBufferEntry[]> entries;
-};
-
-// Parser functions
-namespace
-{
-    std::shared_ptr<LabelEntity> parse_label(BufferedTokenStream &stream)
-    {
-        return std::shared_ptr<LabelEntity>(nullptr);
-    }
-
-    std::shared_ptr<InstructionEntity> parse_instruction(BufferedTokenStream &stream)
-    {
-        return std::shared_ptr<InstructionEntity>(nullptr);
-    }
-
-    std::shared_ptr<SpecifierEntity> parse_specifier(BufferedTokenStream &stream)
-    {
-        return std::shared_ptr<SpecifierEntity>(nullptr);
-    }
-
-    // helper function to call parser functions
-    template<typename Entity>
-    std::shared_ptr<Entity> call_parser_for(BufferedTokenStream &stream, std::function<std::shared_ptr<Entity>(BufferedTokenStream&)> parser_f)
-    {
-        stream.checkpoint();
-        auto entity_ptr = parser_f(stream);
-        if (entity_ptr)
-            return entity_ptr;
-        else
-        {
-            stream.rewind();
-            return std::shared_ptr<Entity>(nullptr);
-        }
-    }
+	std::vector<Token> buf;
+	while (true)
+	{
+		Token tok = scanner.getNext();
+		// If a eof is encountered, break
+		if (tok.type == T_EOF)
+			break;
+		// Also get rid of comments here
+		if (tok.type == T_COMMENT)
+			continue;
+		// If there was an empty line, continue. Otherwise, return the collected tokens.
+		if (tok.type == T_NEWLINE)
+			if (buf.size() == 0)
+				continue;
+			else
+				break;
+		buf.push_back(std::move(tok));
+	}
+	return{ buf.size(), buf.data() };
 }
 
-std::unique_ptr<ParseBuffer> Parser::parse(BufferedTokenStream &stream)
+//
+// Parsing api implementation
+//
+
+size_t parse_element(TokenBuffer tokens, size_t token_offset, ParsedElement *elem)
 {
-    // Temporary storage for buffer entries
-    std::vector<ParseBufferEntry> entry_vector;
-
-    // Read the first token
-    m_tokenStream.next();
-
-    while(stream.current().type != T_EOF)
-    {
-        auto specifier_ptr = call_parser_for<SpecifierEntity>(stream, parse_specifier);
-        if (specifier_ptr)
-        {
-            entry_vector.push_back(makeEntry(ET_SPECIFIER, specifier_ptr));
-            continue;
-        }
-
-        SyntaxError error;
-        error.error = SE_INVALIDTOKEN;
-        error.message = "Expected a specifier, instruction, or label.";
-        error.token = stream.current();
-        throw error;
-
-        stream.next();
-    }
-
-    auto pbuffer = std::make_unique<ParseBuffer>();
-    pbuffer->entry_count = entry_vector.size();
-    pbuffer->entries = std::make_unique<ParseBufferEntry[]>(entry_vector.size());
-    for (size_t i = 0; i < entry_vector.size(); i++)
-        pbuffer->entries[i] = entry_vector[i];
-    return pbuffer;
-}
-
-////////
-////////
-
-bool Assembler::assemble(ParseBuffer *buffer, VMContext *context) noexcept
-{
-	return false;
+	return 0;
 }

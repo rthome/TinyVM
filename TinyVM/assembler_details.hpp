@@ -2,12 +2,8 @@
 
 #include <cstddef>
 #include <string>
-#include <unordered_map>
-#include <stack>
-#include <deque>
-#include <memory>
-#include <array>
 #include <iosfwd>
+#include <memory>
 
 #include "vm.hpp"
 
@@ -65,7 +61,7 @@ enum TokenType
     T_COLON,
     T_POUND,
     T_COMMENT,
-    T_STRING,
+    T_IDENTIFIER,
     T_NUMBER,
     T_LEFTBRACKET,
     T_RIGHTBRACKET,
@@ -98,7 +94,7 @@ class Scanner
 {
     const char * const m_end  = nullptr;
     const char *m_next = nullptr;
-    ScanPosition m_textpos;
+	ScanPosition m_textpos = { 0 };
 
     int peek() const noexcept;
     int get() noexcept;
@@ -122,120 +118,116 @@ public:
 };
 
 ////////
-// A buffered stream with checkpointing
+// Parsing
 ////////
 
-// A checkpointable queue
-//   Element - type of elements in the queue
-//   Source  - type of producer, must have a .readNext() that returns the next Element
-template<typename Element, typename Source>
-class BufferedStream
+// A refcounted array of Tokens
+class TokenBuffer
 {
-    Source& m_source;
-
-    std::stack<size_t> m_checkpointStack;
-    std::deque<Element> m_buffer;
-
-	bool m_replaying = false;
-	size_t m_replayIndex = 0;
+	size_t *m_refcnt = nullptr;
 
 public:
-    BufferedStream(Source& source) noexcept
-        : m_source(source)
-    { }
+	size_t count = 0;
+	Token * tokens = nullptr;
 
-    void checkpoint() noexcept
-    {
-        m_checkpointStack.push(m_buffer.size());
-    }
+	TokenBuffer(size_t c, const Token *token_data);
+	TokenBuffer(const TokenBuffer& b);
+	TokenBuffer(TokenBuffer&& b) = default;
+	~TokenBuffer();
 
-    bool rewind() noexcept
-    {
-        if (m_checkpointStack.empty())
-            return false;
-
-        m_replayIndex = m_checkpointStack.top();
-        m_replaying = true;
-        m_checkpointStack.pop();
-        return true;
-    }
-
-    Element current() const noexcept
-    {
-        if (m_buffer.empty())
-            return Element();
-        else
-            if (m_replaying && m_replayIndex < m_buffer.size())
-                return m_buffer[m_replayIndex];
-            else
-                return m_buffer.back();
-    }
-
-    Element next() noexcept
-    {
-        if (m_replaying)
-        {
-            if (m_replayIndex < m_buffer.size())
-                return m_buffer[m_replayIndex++];
-            else
-                m_replaying = false;
-        }
-
-        Element newElement = m_source.getNext();
-        m_buffer.push_back(newElement);
-        return newElement;
-    }
+	TokenBuffer& operator=(const TokenBuffer& b);
 };
 
-// Specialise for the trivial case of token buffering
-typedef BufferedStream<Token, Scanner> BufferedTokenStream;
+// read tokens until a T_NEWLINE is encountered and return them in a buffer
+TokenBuffer read_scanner_line(Scanner &scanner);
 
-////////
-// Assembler & Parser declarations
-////////
+//
+// Parsed representations
+//
 
-// Different kinds of syntax errors
+enum SpecifierType
+{
+	ST_BASE,
+};
+
+enum OperandType
+{
+	OT_LITERAL,
+	OT_REGISTER,
+	OT_MEMORY,
+	OT_LABELREF,
+};
+
+struct ParsedLabel
+{
+	std::string name;
+};
+
+struct ParsedSpecifier
+{
+	SpecifierType specifier;
+	vmword operand;
+};
+
+struct ParsedInstruction
+{
+	Opcode opcode;
+	size_t operand_count;
+	typedef struct
+	{
+		bool indirect; // whether this uses indirect addressing
+		OperandType type; // what kind of operand this is
+		union value
+		{
+			std::string label_name; // If it's a label reference, this is the name of the label
+			vmword numeric_value; // Otherwise, it's a word
+		};
+	} operands[3];
+};
+
+//
+// The parsing api
+//
+
 enum SyntaxErrorType
 {
-    SE_NOERROR,
 
-    SE_INVALIDTOKEN,
-    SE_RIGHTBRACKETEXPECTED,
 };
 
-// A syntax error thrown by the Assembler
 struct SyntaxError
 {
-    SyntaxErrorType error;
-    std::string message;
-    Token token;
+	SyntaxErrorType type; // the type of error
+	Token tok; // the offending token
+	std::string message; // the error message
 };
 
-// Opaque struct for parsing results
-struct ParseBuffer;
-
-// Parser - Parse tokens into a high-level representation
-class Parser
+enum ParsedLineType
 {
-	BufferedTokenStream &m_tokenStream;
-
-public:
-    // Parse a stream of tokens from a scanner - can throw SyntaxErrors
-    std::unique_ptr<ParseBuffer> parse(BufferedTokenStream &stream);
+	LT_LABEL,
+	LT_SPECIFIER,
+	LT_INSTRUCITON,
+	LT_ERROR,
 };
 
-// Assembler - Turn the parsed representation of the file into
-class Assembler
+struct ParsedElement
 {
-    // Maps labels to memory locations
-    std::unordered_map<std::string, vmword> m_labelMap;
-
-    // The current memory address, set by .base specifier
-    vmword m_address;
-
-    VMContext *m_context;
-
-public:
-    // Take a ParseBuffer and assemble it into a vm context
-    bool assemble(ParseBuffer *buffer, VMContext *context) noexcept;
+	ParsedLineType type;
+	union
+	{
+		SyntaxError error;
+		ParsedLabel label;
+		ParsedSpecifier specifier;
+		ParsedInstruction instruction;
+	};
 };
+
+// Parse the next element from a tokenbuffer
+//   Returns the number of tokens consumed from the buffer
+size_t parse_element(
+	TokenBuffer tokens,   // The buffer from which to retrieve tokens
+	size_t token_offset,  // Offset into the token buffer, where to start reading tokens
+	ParsedElement *elem); // Destination for the resulting ParsedElement. Will only be assigned when there was no error
+
+////////
+// Assemblation
+////////

@@ -4,6 +4,7 @@
 #include <string>
 #include <iosfwd>
 #include <memory>
+#include <queue>
 
 #include "vm.hpp"
 
@@ -76,8 +77,8 @@ std::ostream& operator<<(std::ostream& stream, TokenType token);
 // A position in a text file, with line number and offset into the line
 struct ScanPosition
 {
-    unsigned line;
-    unsigned line_offset;
+    unsigned line = 1;
+    unsigned line_offset = 0;
 };
 
 // A single token, emitted by the Scanner
@@ -85,8 +86,8 @@ struct ScanPosition
 struct Token
 {
     TokenType type = T_INVALID;
+	ScanPosition pos;
     std::string value;
-    ScanPosition pos;
 };
 
 // Assembly scanner - Splits a memory range into a stream of tokens
@@ -94,7 +95,7 @@ class Scanner
 {
     const char * const m_end  = nullptr;
     const char *m_next = nullptr;
-	ScanPosition m_textpos = { 0 };
+	ScanPosition m_textpos;
 
     int peek() const noexcept;
     int get() noexcept;
@@ -117,20 +118,69 @@ public:
     inline ScanPosition pos() const noexcept { return m_textpos; }
 };
 
+// A "high level" token, created from one or more primitive Tokens
+enum class HLTokenType
+{
+	Invalid, // Invalid token
+	Eof,     // End of file
+	Newline, // Newline
+	
+	Specifier,  // A specifier name
+	Label,      // A label name
+	Identifier, // A generic identifier
+	Number,     // A number
+	Literal,    // A literal (#number)
+	IndirectionStart, // Start of an indirection, [
+	IndirectionEnd,   // End of an indirection, ]
+
+	HLTokenTypeCount
+};
+
+std::ostream& operator<<(std::ostream& stream, HLTokenType token);
+
+struct HLToken
+{
+	HLTokenType type = (HLTokenType)0;
+	ScanPosition pos;
+
+	vmword number_value = 0;      // For numeric values such as numbers or literals
+	std::string string_value = ""; // For string values such as identifiers, labels, etc
+
+	HLToken() { }
+	HLToken(HLTokenType t, ScanPosition p) : type(t), pos(p) { }
+	HLToken(HLTokenType t, ScanPosition p, vmword v) : type(t), pos(p), number_value(v) { }
+	HLToken(HLTokenType t, ScanPosition p, const std::string& s) : type(t), pos(p), string_value(s) { }
+};
+
+class TokenAggregator
+{
+	Scanner& m_scanner;
+	std::queue<Token> m_tokenQueue;
+
+	Token nextToken() noexcept;
+
+public:
+	TokenAggregator(Scanner& scanner) noexcept;
+
+	HLToken getNext() noexcept;
+
+	inline ScanPosition pos() const noexcept { return m_scanner.pos(); }
+};
+
 ////////
 // Parsing
 ////////
 
-// A refcounted array of Tokens
+// A refcounted array of HLTokens
 class TokenBuffer
 {
 	size_t *m_refcnt = nullptr;
 
 public:
 	size_t count = 0;
-	Token * tokens = nullptr;
+	HLToken * tokens = nullptr;
 
-	TokenBuffer(size_t c, const Token *token_data);
+	TokenBuffer(size_t c, const HLToken *token_data);
 	TokenBuffer(const TokenBuffer& b);
 	TokenBuffer(TokenBuffer&& b) = default;
 	~TokenBuffer();
@@ -139,7 +189,7 @@ public:
 };
 
 // read tokens until a T_NEWLINE is encountered and return them in a buffer
-TokenBuffer read_scanner_line(Scanner &scanner);
+TokenBuffer read_hltoken_line(TokenAggregator& aggregator);
 
 //
 // Parsed representations

@@ -49,27 +49,38 @@ void load_example(VMContext *ctx)
 
 int main(int argc, char **argv)
 {
-    if (argc >= 2)
-    {
-        FileMapping file(argv[1]);
-        if (!file)
-            return -1;
-        Scanner scanner(file.begin(), file.end());
+	if (argc >= 2)
+	{
+		FileMapping file(argv[1]);
+		if (!file)
+			return -1;
 
-		while (true)
 		{
-			auto token_line = read_scanner_line(scanner);
-			if (token_line.count == 0)
-				break;
-			for (size_t i = 0; i < token_line.count; i++)
+			Scanner initialScanner(file.begin(), file.end());
+			Token primitive_tok = initialScanner.getNext();
+			while (primitive_tok.type != T_EOF)
 			{
-				auto token = token_line.tokens[i];
-				std::cout << "[" << token.pos.line << ":" << token.pos.line_offset << "] " << token.type;
-				if (token.value.size() > 0)
-					std::cout << " \'" << token.value << "\'";
+				std::cout << "[" << primitive_tok.pos.line << ":" << primitive_tok.pos.line_offset << "] " << primitive_tok.type;
+				std::cout << " " << primitive_tok.value << std::endl;
+				primitive_tok = initialScanner.getNext();
+			}
+		}
+		{
+			Scanner scanner(file.begin(), file.end());
+			TokenAggregator aggregator(scanner);
+
+			while (true)
+			{
+				auto token_line = read_hltoken_line(aggregator);
+				if (token_line.count == 0)
+					break;
+				for (size_t i = 0; i < token_line.count; i++)
+				{
+					auto token = token_line.tokens[i];
+					std::cout << "[" << token.pos.line << ":" << token.pos.line_offset << "] " << token.type << " " << token.number_value << "/'" << token.string_value << "'" << std::endl;
+				}
 				std::cout << std::endl;
 			}
-			std::cout << std::endl;
 		}
     }
     else

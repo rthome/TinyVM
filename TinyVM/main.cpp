@@ -1,5 +1,6 @@
 #include "vm.hpp"
 #include "instruction_support.hpp"
+#include "config.hpp"
 
 #include <iostream>
 
@@ -47,6 +48,8 @@ void load_example(VMContext *ctx)
 
 int main(int argc, char **argv)
 {
+    std::cout << "TinyVM v" << TVM_VERSION << std::endl;
+
     auto ctx = vm_create();
     vm_init_stack(ctx, 1024);
     vm_init_programbase(ctx, 1032);

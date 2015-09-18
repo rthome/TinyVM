@@ -1,8 +1,6 @@
 #include "vm.hpp"
 #include "instruction_support.hpp"
 
-#include "assembler_details.hpp"
-
 #include <iostream>
 
 void run_vm_context(VMContext *ctx)
@@ -49,51 +47,14 @@ void load_example(VMContext *ctx)
 
 int main(int argc, char **argv)
 {
-	if (argc >= 2)
-	{
-		FileMapping file(argv[1]);
-		if (!file)
-			return -1;
+    auto ctx = vm_create();
+    vm_init_stack(ctx, 1024);
+    vm_init_programbase(ctx, 1032);
 
-		{
-			Scanner initialScanner(file.begin(), file.end());
-			Token primitive_tok = initialScanner.getNext();
-			while (primitive_tok.type != T_EOF)
-			{
-				std::cout << "[" << primitive_tok.pos.line << ":" << primitive_tok.pos.line_offset << "] " << primitive_tok.type;
-				std::cout << " " << primitive_tok.value << std::endl;
-				primitive_tok = initialScanner.getNext();
-			}
-		}
-		{
-			Scanner scanner(file.begin(), file.end());
-			TokenAggregator aggregator(scanner);
+    load_example(ctx);
 
-			while (true)
-			{
-				auto token_line = read_hltoken_line(aggregator);
-				if (token_line.count == 0)
-					break;
-				for (size_t i = 0; i < token_line.count; i++)
-				{
-					auto token = token_line.tokens[i];
-					std::cout << "[" << token.pos.line << ":" << token.pos.line_offset << "] " << token.type << " " << token.number_value << "/'" << token.string_value << "'" << std::endl;
-				}
-				std::cout << std::endl;
-			}
-		}
-    }
-    else
-    {
-        auto ctx = vm_create();
-        vm_init_stack(ctx, 1024);
-        vm_init_programbase(ctx, 1032);
-
-        load_example(ctx);
-
-        run_vm_context(ctx);
-        vm_destroy(ctx);
-    }
+    run_vm_context(ctx);
+    vm_destroy(ctx);
     return 0;
 }
 

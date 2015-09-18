@@ -21,9 +21,6 @@ configure_file(${TVM_CONFIG_TEMPLATE_PATH} ${TVM_CONFIG_HEADER_PATH})
 set(SRC_LIST
 	main.cpp
 	vm.cpp
-	assembler.cpp
-    assembler_details.cpp
-	assembler_filemapping.cpp
 	instruction.cpp
 	instruction_implementation.cpp
 	instruction_support.cpp)
@@ -34,8 +31,6 @@ set(HDR_LIST
 	util.hpp
 	vm.hpp
 	instruction.hpp
-	assembler.hpp
-    assembler_details.hpp
 	instruction_implementation.hpp
 	instruction_support.hpp
 	vmtypes.hpp)

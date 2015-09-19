@@ -3,6 +3,8 @@
 #include "instruction.hpp"
 #include "vm.hpp"
 
+#include <random>
+
 #define IMPL_NAME(name) op_##name##_impl
 #define INSTRUCTION_IMPL(name) void IMPL_NAME(name)(VMContext *ctx, const Instruction *instr)
 
@@ -289,6 +291,14 @@ namespace
 		if (b != 0)
 			ctx->registers[IP] = a;
 	}
+
+    INSTRUCTION_IMPL(rdrand)
+    {
+        static std::default_random_engine generator;
+        static std::uniform_int_distribution<vmword> distribution;
+        vmword value = distribution(generator);
+        operand_assign_at<O_A>(ctx, instr, value);
+    }
 }
 
 void prepare_instruction_table(instr_func *buffer)
@@ -315,4 +325,5 @@ void prepare_instruction_table(instr_func *buffer)
     buffer[OP_JEQ] = &IMPL_NAME(jeq);
 	buffer[OP_JNE] = &IMPL_NAME(jne);
 	buffer[OP_JNZ] = &IMPL_NAME(jnz);
+    buffer[OP_RDRAND] = &IMPL_NAME(rdrand);
 }

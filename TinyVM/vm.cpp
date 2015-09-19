@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-
 VMContext* vm_create()
 {
 	VMContext *ctx = new VMContext;

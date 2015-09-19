@@ -37,9 +37,9 @@ void load_example(VMContext *ctx)
         vmi_encode_instr_0(OP_RET),
 
         // 1056 main:
-        // Set inputs gcd(1071, 462) = 21
-        vmi_encode_instr_2(OP_MOV, OF_NORMAL, AM_REGISTER, R0, AM_LITERAL, 1071),
-        vmi_encode_instr_2(OP_MOV, OF_NORMAL, AM_REGISTER, R1, AM_LITERAL, 462),
+        // Set inputs to random numbers
+        vmi_encode_instr_1(OP_RDRAND, OF_NORMAL, AM_REGISTER, R0),
+        vmi_encode_instr_1(OP_RDRAND, OF_NORMAL, AM_REGISTER, R1),
         vmi_encode_instr_1(OP_CALL, OF_NORMAL, AM_LITERAL, 1036),
         vmi_encode_instr_0(OP_HALT),
     };

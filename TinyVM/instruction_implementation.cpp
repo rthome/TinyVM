@@ -4,6 +4,7 @@
 #include "vm.hpp"
 
 #include <random>
+#include <chrono>
 
 #define IMPL_NAME(name) op_##name##_impl
 #define INSTRUCTION_IMPL(name) void IMPL_NAME(name)(VMContext *ctx, const Instruction *instr)
@@ -294,8 +295,13 @@ namespace
 
     INSTRUCTION_IMPL(rdrand)
     {
-        static std::default_random_engine generator;
-        static std::uniform_int_distribution<vmword> distribution;
+        static std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+
+        auto min = operand_fetch<O_B>(ctx, instr);
+        auto max = operand_fetch<O_C>(ctx, instr);
+        if (min == max && min == 0)
+            max = UINT64_MAX;
+        std::uniform_int_distribution<vmword> distribution(min, max);
         vmword value = distribution(generator);
         operand_assign_at<O_A>(ctx, instr, value);
     }

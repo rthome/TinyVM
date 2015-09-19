@@ -13,7 +13,7 @@ gcd:
 	ret
 
 main:
-	mov r0 #1071
-	mov r1 #462
+	rdrand r0 #10000 #100000
+	rdrand r1 #10000 #100000
 	call gcd
 	halt

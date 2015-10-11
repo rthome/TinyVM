@@ -5,23 +5,27 @@
 
 #include <iostream>
 
+#include "platform.hpp"
+
 VMContext* vm_create()
 {
 	VMContext *ctx = new VMContext;
+    ctx->memory = plat_map_memory(VM_MEMORY_SIZE);
     prepare_instruction_table(ctx->instr_table);
-	vm_reset(ctx);
+    vm_reset(ctx);
 	return ctx;
 }
 
 void vm_destroy(VMContext *ctx)
 {
+    plat_unmap_memory(ctx->memory, VM_MEMORY_SIZE);
 	delete ctx;
 }
 
 void vm_reset(VMContext *ctx)
 {
 	ctx->running = false;
-	memset(ctx->memory, 0, sizeof(ctx->memory));
+    memset(ctx->memory, 0, VM_MEMORY_SIZE * sizeof(vmword));
 	memset(ctx->registers, 0, sizeof(ctx->registers));
 }
 
@@ -52,7 +56,7 @@ void vm_error(VMContext *ctx, const char *message)
 
 Instruction vm_fetch_decode(VMContext *ctx)
 {
-	auto data_address = reinterpret_cast<InstructionData*>(ctx->memory + ctx->registers[IP]);
+    auto data_address = reinterpret_cast<InstructionData*>(ctx->memory + ctx->registers[IP]);
 	auto instr = vmi_decode(data_address);
 	ctx->registers[IP] += 4;
 	return instr;

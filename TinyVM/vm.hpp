@@ -34,7 +34,7 @@ enum Registers
     VM_REGISTER_COUNT,
 };
 
-const size_t VM_MEMORY_SIZE = 16384;
+const size_t VM_MEMORY_SIZE = 0x10000;
 
 struct VMContext
 {
@@ -42,7 +42,7 @@ struct VMContext
     instr_func instr_table[INSTRUCTION_COUNT];
 
     vmword registers[VM_REGISTER_COUNT];
-    vmword memory[VM_MEMORY_SIZE];
+    vmword *memory;
 };
 
 // Create a new vm context and reset it

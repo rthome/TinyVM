@@ -20,11 +20,18 @@ set(HDR_LIST
     ${TVM_CONFIG_TEMPLATE_PATH}
     ${TVM_CONFIG_HEADER_PATH}
     util.hpp
+    platform.hpp
     vm.hpp
     instruction.hpp
     instruction_implementation.hpp
     instruction_support.hpp
     vmtypes.hpp)
+
+if (UNIX)
+    set(SRC_LIST "${SRC_LIST}" platform_posix.cpp)
+else()
+    set(SRC_LIST "${SRC_LIST}" platform_generic.cpp)
+endif()
 
 include_directories("${PROJECT_BINARY_DIR}")
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})

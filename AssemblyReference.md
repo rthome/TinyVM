@@ -138,7 +138,7 @@ This section defines the syntax of the TinyVM  assembly language using a formal 
 	RegisterOperand = "r", DecNumber | "rIP" | "rIC" | "rSP" | "rSBP" | "rRMD" ;
 	AddressOperand  = Number ;
 	LiteralOperand  = "#", Number ;
-	LabelOperand    = Identifier ;
+	LabelOperand    = ":", Identifier ;
 	
 	Number     = DecNumber | HexNumber ;
 	Identifier = Character, { Character } ;

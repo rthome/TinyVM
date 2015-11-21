@@ -3,7 +3,7 @@
 ; Output in r0
 
 .base 3000
-	jmp main
+	jmp :main
 
 gcd:
 	mov r2 r1

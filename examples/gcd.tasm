@@ -9,11 +9,11 @@ gcd:
 	mov r2 r1
 	mod r1 r0 r1
 	mov r0 r2
-	jnz gcd r1
+	jnz :gcd r1
 	ret
 
 main:
 	rdrand r0 #10000 #100000
 	rdrand r1 #10000 #100000
-	call gcd
+	call :gcd
 	halt

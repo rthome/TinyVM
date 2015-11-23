@@ -201,7 +201,7 @@ def assemble(line_tuples):
 # Glue
 # # #
 
-def parse_arguments(arglist=None):
+def parse_arguments():
     parser = argparse.ArgumentParser(description="The TinyVM Assembler")
     parser.add_argument("file", metavar="FILE", help="source file to assemble")
     parser.add_argument("-o", metavar="OUTFILE", default="tvmimage.bin", help="name of the output memory image (default: tvmimage.bin)")

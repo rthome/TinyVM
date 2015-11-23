@@ -418,3 +418,17 @@ Operand count: 2
 1. Jump target location.
 2. Value to compare to zero.
 
+### Advanced ###
+
+#### RDRAND (Read-random)
+
+Generate a random number in the closed intervall [B, C] and store it in A.
+If B == C == 0, the generated number will be in [0, 2^64-1].
+
+Opcode: 22  
+Applicable flags: None  
+Operand count: 3  
+
+1. Store location for generated random number.
+2. Inclusive lower bound for random number generation. Must be <= 3.
+3. Inclusive upper bound for random number generation. Must be >= 2.

@@ -126,7 +126,7 @@ def parse(tokens):
 # # #
 
 # VM memory size in 64 bit words
-VM_IMAGE_SIZE = 16384
+VM_IMAGE_SIZE = 0x10000
 
 # Dict mapping instruction mnemonics to tuples with (opcode, operand count)
 INSTRUCTION_INFO = {
@@ -207,7 +207,7 @@ def encode_instruction(opcode, flags, operands):
     words.extend([o[1] for o in operands])
     return words
 
-def convert_instruction(instr_tuple):
+def convert_instruction(instr_tuple, label_dict):
     """"Takes an instruction tuple from the parser and convert it into something that can be assembled
     Returns a tuple of (opcode, flags, operands), where operands is a list of 3 (AM, value) tuples"""
     def conv_op(op_tuple):
@@ -223,9 +223,8 @@ def convert_instruction(instr_tuple):
             val = int(val)
             am |= AM_MEMORY
         elif optype == "label_ref":
-            # TODO: implement a way to get label addresses
-            val = 0
-            am |= AM_MEMORY
+            val = label_dict[val]
+            am |= AM_LITERAL
         else:
             raise Exception("Invalid addressing mode identifier: {}".format(optype))
         return am, val
@@ -239,15 +238,42 @@ def convert_instruction(instr_tuple):
         operands.append((0, 0))
     return opcode, OF_NORMAL, operands
 
-def encode_image(values):
+def make_label_index(lines):
+    addr = 0
+    label_dict = {}
+    for line in lines:
+        if line[0] == "specifier":
+            t, spec, args = line
+            if spec == "base":
+                addr = int(args[0][1])
+        elif line[0] == "instruction":
+            addr += 4
+        elif line[0] == "label":
+            t, label = line
+            label_dict[label] = addr
+    return label_dict
+
+def encode_image(value_list):
     "Encode an array of integers into a vm image"
-    pass
+    return array.array("Q", value_list)
 
 def assemble(line_tuples, outfile):
-    def index_labels(lines):
-        pass
+    addr = 0
+    val_list = [0] * VM_IMAGE_SIZE # List of words in the vm image
+    label_dict = make_label_index(line_tuples)
     for line in line_tuples:
-        pass
+        if line[0] == "instruction":
+            converted_instr = convert_instruction(line, label_dict)
+            encoded_instr = encode_instruction(*converted_instr)
+            for i in range(4):
+                val_list[addr + i] = encoded_instr[i]
+            addr += 4
+        elif line[0] == "specifier":
+            t, spec, args = line
+            if spec == "base":
+                addr = int(args[0][1])
+    image = encode_image(val_list)
+    image.tofile(outfile)
 
 # # #
 # Glue
@@ -261,17 +287,20 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    with open(args.file) as f:
+    with open(args.file, "r") as f:
         tokens = list(tokenize(f.read()))
         lines = list(parse(tokens))
         for x in lines:
             print(x)
+        label_dict = make_label_index(lines)
         for x in lines:
             if x[0] == "instruction":
-                converted = convert_instruction(x)
+                converted = convert_instruction(x, label_dict)
                 encoded = encode_instruction(*converted)
                 print("converted: ", converted)
                 print("encoded: ", encoded)
+        with open(args.o, "wb") as outfile:
+            assemble(lines, outfile)
 
 if __name__ == "__main__":
     main()

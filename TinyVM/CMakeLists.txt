@@ -2,8 +2,8 @@ project(TinyVM CXX)
 cmake_minimum_required(VERSION 3.0)
 
 set(TVM_VERSION_MAJOR 0)
-set(TVM_VERSION_MINOR 0)
-set(TVM_VERSION_REV   5)
+set(TVM_VERSION_MINOR 1)
+set(TVM_VERSION_REV   0)
 
 set(TVM_CONFIG_TEMPLATE_PATH "${PROJECT_SOURCE_DIR}/config.hpp.in")
 set(TVM_CONFIG_HEADER_PATH "${PROJECT_BINARY_DIR}/config.hpp")

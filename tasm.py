@@ -1,91 +1,158 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-#
-# The TinyVM Assembler
-# Usage: tasm -o image.bin sourcecode.tasm
-#
+import argparse, re
 
-import sys, argparse, re, array
-
-# # #
+# #
 # Tokenization
-# # #
+# #
+
+class Token(object):
+    text_processors = {
+        "number": lambda t: int(t),
+        "label_ref": lambda t: t[1:],
+        "label": lambda t: t[:-1],
+        "specifier": lambda t: t[1:],
+        "literal": lambda t: int(t[1:]),
+    }
+    
+    @staticmethod
+    def process_value(token_type, token_value):
+        """Process the value of a token, using registered processors.
+            If no processor exists for the given token type, the original value is returned.
+        """
+        try:
+            proc = Token.text_processors[token_type]
+            return proc(token_value)
+        except KeyError:
+            return token_value
+
+    def __init__(self, token_type, token_value, span = None):
+        """Create a token.
+            token_type: type of the new token
+            token_value: value (captured text) of the new token
+            span: tuple of (start_position, end_position) of the token value. Can be omitted if no such information is available.
+        """
+        self.type = token_type
+        self.original_value = token_value
+        self.span = span if span is not None else (0, 0, 0)
+        self.value = Token.process_value(token_type, token_value)
+        
+    def __repr__(self):
+        return "({}, {})".format(self.type, str(self.value))
 
 TOK_DISCARD = 1
 TOK_NO_TEXT = 2
+class TokenStream(object):
+    "Helper class that splits a stream of tokens into lines. Iterate over TokenStream to access lines."
+    type_flags = {
+        "comment": (TOK_DISCARD,),
+        "whitespace": (TOK_DISCARD,),
+        "newline": (TOK_NO_TEXT,),
+    }
+    
+    def __init__(self, token_source):
+        """Create a token stream
+            token_source: Iterable source for tokens
+        """
+        self.source = token_source
+        self.lines = self.split_lines(self.source)
+    
+    def process_token(self, token):
+        try:
+            flags = TokenStream.type_flags[token.type]
+            if TOK_DISCARD in flags:
+                return None
+            if TOK_NO_TEXT in flags:
+                token.value = ""
+            if token.type == "unknown":
+                raise Exception("Found unknown token at {}: {}".format(token.span, token))
+            return token
+        except KeyError:
+            return token
+    
+    def split_lines(self, tokens):
+        lines = []
+        line_tokens = []
+        for token in tokens:
+            processed_token = self.process_token(token)
+            if processed_token is None:
+                continue
+            elif processed_token.type == "newline":
+                if len(line_tokens) > 0:
+                    lines.append(line_tokens)
+                    line_tokens = []
+            else:
+                line_tokens.append(processed_token)
+        else:
+            if len(line_tokens) > 0:
+                lines.append(line_tokens)
+        return lines
+    
+    def __iter__(self):
+        return iter(self.lines)
+            
+class TokenRule(object):
+    def __init__(self, expression, token_type):
+        self.original_expression = expression
+        self.regex = re.compile(expression)
+        self.type = token_type
+    
+    def match(self, string, pos):
+        return self.regex.match(string, pos)
 
-TOK_RULES = [(n, re.compile(r), f) for n, r, f in [
-    ("newline", r"\r\n|\n", (TOK_NO_TEXT,)),
-    ("whitespace", r"\s+", (TOK_DISCARD,)),
-    ("comment", r";[^\n]*", (TOK_DISCARD,)),
-    ("label", r"\w+:", ()),
-    ("label_ref", r":\w+", ()),
-    ("specifier", r"\.\w+", ()),
-    ("literal", r"#\d+", ()),
-    ("brk_open", r"\[", ()),
-    ("brk_close", r"\]", ()),
-    ("number", r"\d+", ()), # TODO: Support more number types
-    ("register", r"r([0-9]+|IP|IC|SP|SBP|RMD)", ()),
-    ("identifier", r"\w+", ()),
+TOKEN_RULES = [TokenRule(e, t) for t, e in [
+    ("newline", r"\r?\n"),
+    ("whitespace", r"\s+"),
+    ("comment", r";[^\n]*"),
+    ("label", r"\w(\w|\d)*:"),
+    ("label_ref", r":\w(\w|\d)*"),
+    ("specifier", r"\.(\w|\d)+"),
+    ("literal", r"#\d+"),
+    ("number", r"\d+"),
+    ("register", r"r([0-9]+|IP|IC|SP|SBP|RMD)"),
+    ("identifier", r"\w(\w|\d)*"),
+    ("brk_open", r"\["),
+    ("brk_close", r"\]"),
 ]]
 
-def tokenize(string):
-    "Break up an input string into a bunch of (token, text) tuples"
-    def process_flags(tok, text, flags):
-        if TOK_NO_TEXT in flags:
-            text = ""
-        if TOK_DISCARD in flags:
-            tok = None
-            text = ""
-        return tok, text
+def tokenize(string, rules):
     pos = 0
     last_end = 0
     while True:
         if pos >= len(string):
             break
-        for tok, rule, flags in (tok_rule for tok_rule in TOK_RULES):
+        for rule in TOKEN_RULES:
             match = rule.match(string, pos)
             if match is not None:
                 start, end = match.span()
                 if start > last_end:
-                    yield "unknown", string[last_end:start]
-                ptok, ptext = process_flags(tok, match.group(), flags)
-                if ptok is not None:
-                    yield ptok, ptext
+                    yield Token("unknown", string[last_end:start], match.span())
+                yield Token(rule.type, match.group(), match.span())
                 last_end = pos = match.end()
                 break
         else:
             pos += 1
     if last_end < len(string):
-        yield "unknown", string[last_end:]
+        yield Token("unknown", string[last_end:], (last_end, len(string)))
 
-# # #
+# #
 # Parsing
-# # #
+# #
 
 def parse_single_operand(tokens):
     "Parse a single operand from a bunch of tokens"
-    def fixup_tok(tok, text):
-        "Removes the leading # from literals and such things"
-        # TODO: do this somewhere more appropriate
-        if tok == "literal" or tok == "label_ref":
-            text = text[1:]
-        if tok == "number":
-            tok = "memory"
-        return tok, text
     token, mode = (tokens[0], "direct") if len(tokens) == 1 else (tokens[1], "indirect")
-    tok, text = fixup_tok(*token)
-    return tok, text, mode
+    return token.type, token.value, mode
 
 def separate_operands(tokens):
     "Separate a bunch of tokens into one or more groups, each corresponding to one operand"
     operand_tokens = []
     indirect = False
-    for tok, txt in tokens:
-        operand_tokens.append((tok, txt))
-        if tok == "brk_open":
+    for tok in tokens:
+        operand_tokens.append(tok)
+        if tok.type == "brk_open":
             indirect = True
-        if not indirect or (indirect and tok == "brk_close"):
+        if not indirect or (indirect and tok.type == "brk_close"):
             yield operand_tokens
             operand_tokens = []
             indirect = False
@@ -93,37 +160,23 @@ def separate_operands(tokens):
 def parse_operands(tokens):
     "Parse a list of tokens into a list of instruction operands"
     groups = separate_operands(tokens)
-    return [parse_single_operand(token_group) for token_group in groups]
+    return [parse_single_operand(tg) for tg in groups]
 
-def parse_line(line):
-    """Parse a line of tokens into a label, a specifier, or a instruction
-    Returns tuples of (type, name, [operands])"""
-    (tok, text), *rest = line
-    if tok == "label":
-        return "label", text[:-1]
-    elif tok == "specifier":
-        return "specifier", text[1:], list(rest)
-    elif tok == "identifier":
-        return "instruction", text, parse_operands(rest) if len(rest) > 0 else []
-
-def parse(tokens):
-    "Parse a bunch of tokens into instructions, labels, and specifiers"
-    line = []
-    for tok, text in tokens:
-        if tok != "newline":
-            line.append((tok, text))
-            continue
-        if len(line) > 0:
-            yield parse_line(line)
-            line = []
+def parse_line(tokens):
+    "Parse a list of tokens that form a line"
+    token, *rest = tokens
+    if token.type == "label":
+        return token
+    elif token.type == "specifier":
+        return token, rest
+    elif token.type == "identifier":
+        return token, parse_operands(rest) if len(rest) > 0 else []
     else:
-        if len(line) > 0:
-            # Make sure to parse the last line even if there is no final newline
-            yield parse_line(line)
+        raise Exception("Unexpected token {} at start of line at {}".format(token, token.span))
 
-# # #
-# Assembling
-# # #
+# #
+# Assembly
+# #
 
 # VM memory size in 64 bit words
 VM_IMAGE_SIZE = 0x10000
@@ -194,113 +247,32 @@ AM_LITERAL = 2
 AM_MEMORY = 4
 AM_REGISTER = 8
 
-def encode_instruction(opcode, flags, operands):
-    "Encode an instruction into 4 vm words"
-    def encode_controlword():
-        e_opcode = opcode << 32
-        e_flags = flags << 24
-        e_am0 = operands[0][0] << 16
-        e_am1 = operands[1][0] << 8
-        e_am2 = operands[2][0]
-        return e_opcode | e_flags | e_am0 | e_am1 | e_am2
-    words = [encode_controlword()]
-    words.extend([o[1] for o in operands])
-    return words
-
-def convert_instruction(instr_tuple, label_dict):
-    """"Takes an instruction tuple from the parser and convert it into something that can be assembled
-    Returns a tuple of (opcode, flags, operands), where operands is a list of 3 (AM, value) tuples"""
-    def conv_op(op_tuple):
-        optype, val, mode = op_tuple
-        am = AM_INDIRECT if mode == "indirect" else 0
-        if optype == "register":
-            val = REGISTER_INFO[val]
-            am |= AM_REGISTER
-        elif optype == "literal":
-            val = int(val)
-            am |= AM_LITERAL
-        elif optype == "memory":
-            val = int(val)
-            am |= AM_MEMORY
-        elif optype == "label_ref":
-            val = label_dict[val]
-            am |= AM_LITERAL
-        else:
-            raise Exception("Invalid addressing mode identifier: {}".format(optype))
-        return am, val
-    t, instr, op_tuples = instr_tuple
-    opcode, op_count = INSTRUCTION_INFO[instr]
-    if (len(op_tuples) != op_count):
-        raise Exception("Instruction {} expected {} operands, got  {}".format(instr, op_count, len(op_tuples)))
-    operands = [conv_op(t) for t in op_tuples]
-    while len(operands) < 3:
-        # Extend operands list to 3 operands with zeroes
-        operands.append((0, 0))
-    return opcode, OF_NORMAL, operands
-
-def make_label_index(lines):
-    addr = 0
-    label_dict = {}
-    for line in lines:
-        if line[0] == "specifier":
-            t, spec, args = line
-            if spec == "base":
-                addr = int(args[0][1])
-        elif line[0] == "instruction":
-            addr += 4
-        elif line[0] == "label":
-            t, label = line
-            label_dict[label] = addr
-    return label_dict
-
-def encode_image(value_list):
-    "Encode an array of integers into a vm image"
-    return array.array("Q", value_list)
-
-def assemble(line_tuples, outfile):
-    addr = 0
-    val_list = [0] * VM_IMAGE_SIZE # List of words in the vm image
-    label_dict = make_label_index(line_tuples)
-    for line in line_tuples:
-        if line[0] == "instruction":
-            converted_instr = convert_instruction(line, label_dict)
-            encoded_instr = encode_instruction(*converted_instr)
-            for i in range(4):
-                val_list[addr + i] = encoded_instr[i]
-            addr += 4
-        elif line[0] == "specifier":
-            t, spec, args = line
-            if spec == "base":
-                addr = int(args[0][1])
-    image = encode_image(val_list)
-    image.tofile(outfile)
-
-# # #
+# #
 # Glue
-# # #
+# #
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="The TinyVM Assembler")
     parser.add_argument("file", metavar="FILE", help="source file to assemble")
     parser.add_argument("-o", metavar="OUTFILE", default="tvmimage.bin", help="name of the output memory image (default: tvmimage.bin)")
     return parser.parse_args()
-
+    
 def main():
     args = parse_arguments()
-    with open(args.file, "r") as f:
-        tokens = list(tokenize(f.read()))
-        lines = list(parse(tokens))
-        for x in lines:
-            print(x)
-        label_dict = make_label_index(lines)
-        for x in lines:
-            if x[0] == "instruction":
-                converted = convert_instruction(x, label_dict)
-                encoded = encode_instruction(*converted)
-                print("converted: ", converted)
-                print("encoded: ", encoded)
-        with open(args.o, "wb") as outfile:
-            assemble(lines, outfile)
+    with open(args.file, "r") as source_file:
+        source_string = source_file.read()
+        token_iterator = tokenize(source_string, TOKEN_RULES)
+        token_stream = TokenStream(token_iterator)
+        token_lines = token_stream.lines
+        
+        print("token lines")
+        for t in token_lines:
+            print(t)
+        
+        print("parsed lines")
+        parsed_lines = [parse_line(token_line) for token_line in token_stream]
+        for t in parsed_lines:
+            print(t)
 
 if __name__ == "__main__":
     main()

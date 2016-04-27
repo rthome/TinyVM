@@ -1,5 +1,5 @@
 project(TinyVM CXX)
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.0)
 
 set(TVM_VERSION_MAJOR 0)
 set(TVM_VERSION_MINOR 1)

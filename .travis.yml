@@ -1,6 +1,6 @@
 language: cpp
 sudo: required
-dist: trusty
+dist: precise
 
 matrix:
   include:
@@ -25,7 +25,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-3.7
+            - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
       env: COMPILER=clang++-3.7
@@ -34,7 +34,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-3.8
+            - llvm-toolchain-precise-3.8
           packages:
             - clang-3.8
       env: COMPILER=clang++-3.8
